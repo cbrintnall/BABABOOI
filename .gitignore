@@ -2,3 +2,6 @@ __pycache__
 server/__pycache__
 
 node_modules/
+bababooi-ml/lightning_logs/
+.vscode/
+*.onnx
