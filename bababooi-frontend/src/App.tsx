@@ -1,24 +1,30 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import { Drawer } from './Drawing';
+import React, { useEffect } from 'react';
+
+import { io } from 'socket.io-client';
+import cfg from "./config";
+
+const socket = io(cfg.domain);
 
 function App() {
+  const requestId = () => {
+    fetch(cfg.lobbyDomain, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      redirect: 'follow'
+    })
+    .then(console.log)
+    .catch(console.error)
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <button onClick={requestId}>
+        Send Create Request
+      </button>
+      <Drawer />
     </div>
   );
 }
