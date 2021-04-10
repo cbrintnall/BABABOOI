@@ -1,8 +1,9 @@
+from pytorch_lightning import LightningModule
 import torch
 import torch.nn as nn
 
 
-class DummyModel(nn.Module):
+class DummyModel(LightningModule):
     def __init__(self, channels=1, classes=10):
         """Dummy model for testing ONNX exports and serving.
 
@@ -11,6 +12,8 @@ class DummyModel(nn.Module):
             classes (int): Number of classes for multi-class classification. Defaults to 10.
         """
         super().__init__()
+        self.save_hyperparameters()
+
         self.conv = nn.Conv2d(channels, 8, 3)
         self.pool = nn.AdaptiveAvgPool2d(2)
         self.proj = nn.Linear(8*2*2, classes)
@@ -21,6 +24,22 @@ class DummyModel(nn.Module):
         x = x.flatten(1)
         x = self.proj(x)
         return x
+
+    def _step(self, img, targ):
+        pred = self(img)
+        return nn.functional.cross_entropy(pred, targ)
+
+    def training_step(self, batch, batch_idx):
+        return self._step(*batch)
+
+    def validation_step(self, batch, batch_idx):
+        return self._step(*batch)
+
+    def test_step(self, batch, batch_idx):
+        return self._step(*batch)
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=1e-3)
 
 
 def main():
