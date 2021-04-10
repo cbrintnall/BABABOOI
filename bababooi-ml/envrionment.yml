@@ -14,4 +14,6 @@ dependencies:
   - pip:
     - pytorch-lightning==1.2
     - flask==1.1
+    - onnx==1.8
+    - onnxruntime=1.7
 prefix: /home/ayalaa2/anaconda3/envs/bababooi-ml
