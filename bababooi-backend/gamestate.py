@@ -22,7 +22,7 @@ class GameSession:
             player_array.append(player.to_dict())
         return player_array
 
-    def get_player(name):
+    def get_player(self, name):
         for player in self.players:
             if player.name == name:
                 return player
@@ -73,14 +73,37 @@ def choose_game(json):
         return "Player doesn't exist in room!"
     if player.isOwner == False:
         return "Player isn't an owner!"
-    games[room].gameState = game
-    # TODO: Validate game
+    if games[room].gameState != 'lobby':
+        return "Can't choose the game mode while playing!"
+    games[room].gameType = game
+    # TODO: Validate game type
     return ''
 
-def get_players(room):
-    if room in games.keys():
-        return games[room].get_player_array()
-    return []
+def start_game(json):
+    room = json['room']
+    name = json['name']
+    if room not in games.keys():
+        return "Room doesn't exist!";
+    player = games[room].get_player(name)
+    if player == None:
+        return "Player doesn't exist in room!"
+    if player.isOwner == False:
+        return "Player isn't an owner!"
+    if games[room].gameState != 'lobby':
+        return "Can't start the game while already playing!"
+    games[room].gameState = 'playing'
+    return ''
+
+def get_gamestate(room):
+    if room not in games.keys():
+        return None
+
+    res = {}
+    res['room'] = room
+    res['gameType'] = games[room].gameType
+    res['gameState'] = games[room].gameState
+    res['players'] = games[room].get_player_array()
+    return res
 
 def can_create_new_game():
     return len(games) < MAX_GAMES
