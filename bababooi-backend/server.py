@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 import json
 import gamestate
@@ -15,24 +15,41 @@ def broadcast_players(room):
     msg_str = json.dumps(msg)
     emit('players', msg_str, to=room)
 
+def broadcast_gamestate(room):
+    emit('gamestate', "asdf", to=room)
+
+@app.route('/can_create_new_game')
+def can_create_new_game():
+    if gamestate.can_create_new_game():
+        return "yes"
+    return "no"
+
 @socketio.on('join_game')
 def join_game(data):
-    join_packet = json.loads(data)
-    player_exists = gamestate.add_player(join_packet)
-    if player_exists:
-        emit('error', 'Player already exists!')
+    packet = json.loads(data)
+    error = gamestate.add_player(packet)
+    if error != '':
+        emit('error', error)
         return
-    join_room(join_packet['room'])
-    broadcast_players(join_packet['room'])
+    join_room(packet['room'])
+    broadcast_players(packet['room'])
 
 @socketio.on('leave_game')
 def leave_game(data):
-    leave_packet = json.loads(data)
-    game_still_exists = gamestate.remove_player(leave_packet)
-    leave_room(leave_packet['room'])
-    print("Game_still_exist:", game_still_exists)
+    packet = json.loads(data)
+    game_still_exists = gamestate.remove_player(packet)
+    leave_room(packet['room'])
     if game_still_exists:
-        broadcast_players(leave_packet['room'])
+        broadcast_players(packet['room'])
+
+@socketio.on('choose_game')
+def choose_game(data):
+    packet = json.loads(data)
+    err = gamestate.change_mode(packet)
+    if err != '':
+        emit('error', error)
+        return
+    broadcast_gamestate(packet['room'])
 
 @socketio.on('start_game')
 def start_game(data):
