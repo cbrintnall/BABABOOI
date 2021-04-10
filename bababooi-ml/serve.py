@@ -5,25 +5,31 @@ import torch
 from torchvision.transforms.functional import to_tensor
 from PIL import Image
 from flask import Flask, jsonify, request
+import onnxruntime
+import numpy as np
 
 from models import DummyModel
 
 
 app = Flask(__name__)
-model = DummyModel.load_from_checkpoint('lightning_logs/version_0/checkpoints/epoch=0-step=31.ckpt')
-model.eval()
+ort_session = onnxruntime.InferenceSession('onnx/model.onnx')
 
 
-def transform_image(img_bytes):
+def img_from_bytes(img_bytes):
     image = Image.open(io.BytesIO(img_bytes))
-    image = to_tensor(image).unsqueeze(0)
-    return image
+    image = np.expand_dims(np.array(image), axis=(0, 1))
+    return image.astype(np.float32)
 
 
 def get_prediction(img_bytes):
-    img = transform_image(img_bytes)
-    logits = model(img)
-    probs = torch.nn.functional.softmax(logits, dim=1)
+    # Run image through network
+    img = img_from_bytes(img_bytes)
+    ort_inputs = {ort_session.get_inputs()[0].name: img}
+    ort_outs = ort_session.run(None, ort_inputs)[0]
+
+    # Postprocess logits into class probabilities
+    exp = np.exp(ort_outs)
+    probs = exp / np.sum(exp, axis=1)
     return probs
 
 
