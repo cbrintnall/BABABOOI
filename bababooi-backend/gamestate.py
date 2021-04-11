@@ -158,6 +158,7 @@ def bababooi_init_round(game):
     state = game.gameSpecificData
 
     # Determine the two classes we're competing against eachother
+    num_classes = len(bababooi_data['info']['class_names'])
     source_class_index, target_class_index = random.sample(range(num_classes), 2)
     state['startingClassIdx'] = source_class_index
     state['targetClassIdx'] = target_class_index
@@ -246,16 +247,25 @@ def submit_image(json):
     if game.gameSpecificData['state'] != 'playing':
         return "Can't submit an image after round is over"
     player = game.get_player(name)
+
+    # When timer is expired, front-end will call submit_image
+    # owner client make a ping to see if all images are done
+    # If so, go into review and ping everyone
+    # Otherwise, waits a bit before calling again
+
     # Determine if player is final player
     lastPlayer = True
     for p in game.players:
         if 'img' not in p.gameSpecificData.keys():
             lastPlayer = False
             break
+
     if hasRoundExpired(game.gameSpecificData['startingTime'], ROUND_LEN_IN_SECS + START_DELAY_IN_SECS):
         lastPlayer = True
+
     if 'img' in player.gameSpecificData.keys():
         return "Can't submit an image twice in a round!"
+
     player.gameSpecificData['img'] = img
     if lastPlayer:
         bababooi_end_round(game)
