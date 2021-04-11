@@ -15,6 +15,7 @@ class GameSession:
     players: list = field(default_factory=list)
     gameType: str = "bababooi"
     gameState: str = "lobby"
+    gameSpecific
 
     def get_player_array(self):
         player_array = []
@@ -30,17 +31,22 @@ class GameSession:
 
 games = {}
 
-def add_player(json):
-    room = json['room']
-    name = json['name']
-    isOwner = False
+def create_room_with_player(room, user):
+    if room in games.keys():
+        return 'Room id already exists!'
+    if len(games) >= MAX_GAMES:
+        return 'Room quantity exceeded!'
+    games[room] = GameSession(room)
+    games[room].players.append(Player(name, True))
+    return ''
+
+def create_player_in_room(room, user):
     if room not in games.keys():
-        games[room] = GameSession(room)
-        isOwner = True
+        return "Room doesn't exist!"
     for player in games[room].players:
         if player.name == name:
             return 'Player name is taken!'
-    games[room].players.append(Player(name, isOwner))
+    games[room].players.append(Player(name, False))
     return ''
 
 def remove_player(json):
@@ -97,13 +103,22 @@ def start_game(json):
 def get_gamestate(room):
     if room not in games.keys():
         return None
-
     res = {}
     res['room'] = room
     res['gameType'] = games[room].gameType
     res['gameState'] = games[room].gameState
     res['players'] = games[room].get_player_array()
     return res
+
+def get_server_status():
+    result = {}
+    result['maxRooms'] = MAX_GAMES
+    result['rooms'] = []
+    for room in games:
+        entry = {}
+        entry['sessionId'] = room.room
+        entry['userCount'] = len(room.players)
+        result[rooms].append(entry)
 
 def can_create_new_game():
     return len(games) < MAX_GAMES

@@ -2,31 +2,51 @@ from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 import json
 import gamestate
+import boto3
+import io
+import string
+import random
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+@app.route('/status')
+def status():
+    status = gamestate.get_server_status()
+    response = app.response_class(
+        response=json.dumps(status),
+        status=200)
+
+@app.route('/create')
+def create():
+    if request.method == 'POST':
+        if 'username' not in request.args.keys() or 'sessionId' not in request.args.keys():
+            return app.response_class("Missing param", 404)
+        user = request.args['username']
+        room = request.args['sessionId']
+
+        if 'create' not in request.args.keys():
+            err = gamestate.create_player_in_room(room, user)
+        else:
+            err = gamestate.create_room_with_player(room, user)
+        code = 200 if err == '' else 404
+        return app.response_class(err, code)
 
 def broadcast_gamestate(room):
     st = gamestate.get_gamestate(room)
     msg = json.dumps(st)
     emit('gamestate', msg, to=room)
 
-@app.route('/can_create_new_game')
-def can_create_new_game():
-    if gamestate.can_create_new_game():
-        return "yes"
-    return "no"
-
-@socketio.on('join_game')
-def join_game(data):
-    packet = json.loads(data)
-    error = gamestate.add_player(packet)
-    if error != '':
-        emit('error', error)
-        return
-    join_room(packet['room'])
-    broadcast_gamestate(packet['room'])
+# @socketio.on('join_game')
+# def join_game(data):
+#     packet = json.loads(data)
+#     error = gamestate.add_player(packet)
+#     if error != '':
+#         emit('error', error)
+#         return
+#     join_room(packet['room'])
+#     broadcast_gamestate(packet['room'])
 
 @socketio.on('leave_game')
 def leave_game(data):
@@ -62,5 +82,13 @@ def submit_image(data):
 def submit_text(data):
     pass
 
+def download_images():
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket('bababooi')
+    # obj = bucket.Object('asdfasdfadsf')
+    # fs = io.StringIO()
+    # obj.download_fileobj(fs)
+
 if __name__ == '__main__':
+    download_images()
     socketio.run(app)
