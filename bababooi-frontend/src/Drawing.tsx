@@ -1,5 +1,6 @@
 import React, { createRef, RefObject } from "react";
 import cfg from "./config";
+import { eraseCanvasSubject, newImageSubmissionSubject, newImageSubmittedSubject } from "./events";
 
 export type Point = {
   x: number;
@@ -10,7 +11,12 @@ type DrawerState = {
   drawing: boolean;
 };
 
-class Drawer extends React.Component<{}, DrawerState> {
+type DrawerProps = {
+  width?: number,
+  height?: number
+}
+
+class Drawer extends React.Component<DrawerProps, DrawerState> {
   canvasRef: RefObject<HTMLCanvasElement>;
   ctx?: CanvasRenderingContext2D;
 
@@ -42,6 +48,17 @@ class Drawer extends React.Component<{}, DrawerState> {
       this.canvasRef.current.onmousemove = (e: MouseEvent) =>
         this.onMouseMoved(e);
     }
+
+    eraseCanvasSubject.subscribe(() => {
+      this.ctx?.clearRect(0, 0, this.props.width || 500, this.props.height || 500);
+      this.ctx?.fillRect(0, 0, this.props.width || 500, this.props.height || 500);
+    })
+
+    newImageSubmissionSubject.subscribe(() => {
+      if (this.canvasRef.current) {
+        newImageSubmittedSubject.next(this.canvasRef.current.toDataURL());
+      }
+    })
   }
 
   getMouseCanvasPosition(e: MouseEvent): Point {
@@ -96,7 +113,12 @@ class Drawer extends React.Component<{}, DrawerState> {
   render() {
     return (
       <div>
-        <canvas ref={this.canvasRef} height={500} width={500}></canvas>
+        <canvas
+          ref={this.canvasRef} 
+          height={this.props.height} 
+          width={this.props.width}
+        >
+        </canvas>
       </div>
     );
   }

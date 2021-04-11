@@ -35,7 +35,7 @@ class LandingPage extends React.Component<RouteComponentProps, {}> {
 
   componentDidMount() {
     setTimeout(() => {
-      this.props.history.push('/game')
+      this.props.history.push('/login')
     }, this.getBootTimeout());
   }
 
