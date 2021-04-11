@@ -1,53 +1,35 @@
-import json, re, os, random
+import re, string, random
 import boto3
-from boto3.dynamodb.conditions import Key
-import logging
+import Core
+from Core import logger, ddb
 
-logger = logging.getLogger()
+from HostInteraction import query_hosts, find_host, join_session
 
-id_match = re.compile("[0-9A-Z]{6}")
-ddb = boto3.resource('dynamodb')
+def register_new_game(gameId, session_hostname):
+    session_table = ddb.Table(Core.DDB_GAME_SESSION_TABLE)
 
-def find_host(userId):
-    table = ddb.Table(os.environ['DDB_HOST_TABLE'])
+    session_table.put_item(
+        Item={
+            'GameSessionId':gameId,
+            'hostname': session_hostname
+        }
+    )
 
-    scan_kwargs = {
-        'ProjectionExpression':'hostname'
-    }
-
-    response = table.scan(**scan_kwargs)
-    servers = response['Items']
-    random.shuffle(servers)
-
-    logger.debug(servers)
-
-    # query each server to find availability, for testing we're just grabbing the first one
-    # eventually we'll need to handle 503-type scenarios
-
-    return(servers[0]['hostname'])
-
-def join_session(userId, gameId):
-
-    # query DDB to find game session
-    session_table = ddb.Table(os.environ['DDB_GAME_SESSION_TABLE'])
-
-    get_session_resp = session_table.get_item(
-            Key={'GameSessionId':gameId}
-        )
-
-    if 'Item' not in get_session_resp:
-        return None
-    else:
-        return get_session_resp['Item']['hostname']
 
 def lambda_handler(event, context):
     print(event)
     userId = event['userId']
 
     session_hostname = ''
+
+    createGame = False
     
     # No gameId means we're requesting a new session
-    if 'gameId' not in event or event['gameId'] == '':
+    if 'gameId' not in event or len(event['gameId']) == 0:
+
+        # create a new gameId
+        gid_length = int(Core.GAMEID_LENGTH)
+        gameId = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(gid_length))
 
         # check with game servers to find a host
         session_hostname = find_host(userId)
@@ -57,11 +39,14 @@ def lambda_handler(event, context):
                 'error':'NoHostFound'
             }
 
+        createGame = True
+
+
     # gameId present, let's try to find the hostname for that session
     else:
         gameId = event['gameId']
-
-        logging.info(f'parsed game ID {gameId}')
+        id_match = re.compile("[0-9A-Z]{6}")
+        logger.info(f'parsed game ID {gameId}')
 
         # validate that it's a good gameId
         if not id_match.match(gameId):
@@ -70,20 +55,55 @@ def lambda_handler(event, context):
                 'error': 'InvalidGameId'
             }
 
-        session_hostname = join_session(userId, gameId)
+        # query DDB to find game session host
+        session_table = ddb.Table(Core.DDB_GAME_SESSION_TABLE)
 
-        if not session_hostname:
+        get_session_resp = session_table.get_item(
+            Key={'GameSessionId':gameId}
+        )
+
+        if 'Item' not in get_session_resp:
             return {
                 'statusCode': 404,
                 'error': 'GameIdNotFound'
             }
 
+        session_hostname = get_session_resp['Item']['hostname']
+
+    
+    # By the time we get here, the above logic will have defined:
+    # gameId
+    # userId (mandatory input)
+    # session_hostname: determined either by a) finding the host associated with a session, or b) finding a brand new host
+    # createGame: default false, only set to True if gameId is null
+    
+    
+    resp_code = join_session(session_hostname, userId, gameId, createGame)
+
+
+    if resp_code == 200:
+        if createGame == True:
+            register_new_game(gameId, session_hostname)
+
+        return {
+            'statusCode': 200,
+            'host':session_hostname+':5000',
+            'gameId':gameId
+        }
+    elif resp_code == 404:
+        return {
+            'statusCode': 404,
+            'error': 'GameIdNotFound'
+        }
+    else:
+        return {
+            'statusCode': 500,
+            'error': 'UnknownError'
+        }
+
 
     # If we got this far, we have a hostname
-    return {
-        'statusCode': 200,
-        'host':session_hostname
-    }
+    
 
 
-print(lambda_handler({'userId':'test','gameId':'YD9C6G'}, None))
+print(lambda_handler({'userId':'test3', 'gameId':'GXOXBG'}, None))
