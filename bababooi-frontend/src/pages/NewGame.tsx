@@ -1,7 +1,9 @@
 import React, { CSSProperties } from "react";
-import { requestGame } from '../api-calls';
-import cfg from '../config';
+import { RouteComponentProps } from "react-router-dom";
+import { requestGame } from "../api-calls";
+import cfg from "../config";
 import { errorSubject, serverJoinSubject } from "../events";
+import { getUsername } from '../App';
 
 const defaultId = "ZGH69Q";
 
@@ -17,8 +19,8 @@ type NewGameState = {
   joinId: string;
 };
 
-class NewGame extends React.Component<{}, NewGameState> {
-  constructor(props: {}) {
+class NewGame extends React.Component<RouteComponentProps, NewGameState> {
+  constructor(props: RouteComponentProps) {
     super(props);
 
     this.state = {
@@ -28,27 +30,38 @@ class NewGame extends React.Component<{}, NewGameState> {
   }
 
   tryServerJoin() {
-    requestGame("testusername", this.hasValidJoinId() ? this.state.joinId : undefined)
-        .then(result => {
-          // if returned a string, it's an error
-          if (typeof result === 'string') {
-            errorSubject.next({ userMessage: result })
-          } else {
-            // otherwise we've received a valid payload
-            serverJoinSubject.next({ 
-              host: process.env.NODE_ENV === "development" ? cfg.backendDomain : result.host
-            })
-          }
-        })
-        .catch(err => {
-          errorSubject.next({ userMessage: err })
-        })
+    if (!getUsername()) {
+      return;
+    }
+
+    requestGame(
+      getUsername()!,
+      this.hasValidJoinId() ? this.state.joinId : undefined
+    )
+      .then((result) => {
+        // if returned a string, it's an error
+        if (typeof result === "string" || (result as any).errorMessage) {
+          errorSubject.next({ userMessage: result as string });
+          console.error(result)
+        } else {
+          // otherwise we've received a valid payload
+          // const gameUrl =
+          //   process.env.NODE_ENV === "development"
+          //     ? cfg.backendDomain
+          //     : result.host;
+
+          this.props.history.push(`/drawing/${result.gameId}?host=${result.host}`);
+        }
+      })
+      .catch((err) => {
+        errorSubject.next({ userMessage: err });
+      });
   }
 
   hasValidJoinId(): boolean {
     return (
-      this.state.joining && 
-      this.state.joinId !== defaultId && 
+      this.state.joining &&
+      this.state.joinId !== defaultId &&
       this.state.joinId.length === cfg.maxRoomIdLength
     );
   }
@@ -91,19 +104,20 @@ class NewGame extends React.Component<{}, NewGameState> {
                   cursor: "pointer",
                 }}
               >
-                <div style={{ 
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center"
-                 }}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
                   <div
                     style={{ width: "16em" }}
                     className="interactable aesthetic-windows-95-button"
                   >
-                    <button 
-                      style={{ padding: "12px" }} 
+                    <button
+                      style={{ padding: "12px" }}
                       onClick={() => this.tryServerJoin()}
                     >
                       CREATE NEW GAME ?
@@ -123,7 +137,11 @@ class NewGame extends React.Component<{}, NewGameState> {
                       {this.state.joining ? "BACK OUT" : "JOIN A GAME ?"}
                     </button>
                   </div>
-                  <hr style={{ visibility: this.state.joining ? "visible" : "hidden" }} />
+                  <hr
+                    style={{
+                      visibility: this.state.joining ? "visible" : "hidden",
+                    }}
+                  />
                   {
                     <div
                       style={{
@@ -131,30 +149,49 @@ class NewGame extends React.Component<{}, NewGameState> {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        flexDirection: "column"
+                        flexDirection: "column",
                       }}
                     >
                       <div>
                         <span> game id: </span>
                       </div>
-                      <div style={{ padding: '12px', display: 'flex', flexDirection: 'row' }}>
+                      <div
+                        style={{
+                          padding: "12px",
+                          display: "flex",
+                          flexDirection: "row",
+                        }}
+                      >
                         <input
                           style={{ flexShrink: 0 }}
                           maxLength={cfg.maxRoomIdLength}
                           className="aesthetic-windows-95-text-input"
                           type="text"
                           value={this.state.joinId}
-                          onChange={(e) => this.setState({ joinId: e.target.value.toUpperCase() })}
+                          onChange={(e) =>
+                            this.setState({
+                              joinId: e.target.value.toUpperCase(),
+                            })
+                          }
                         />
-                        <div className="interactable aesthetic-windows-95-button" style={{ flexShrink: 3 }}>
-                          <button onClick={() => this.setState({ joinId: "" })}>X</button>
+                        <div
+                          className="interactable aesthetic-windows-95-button"
+                          style={{ flexShrink: 3 }}
+                        >
+                          <button onClick={() => this.setState({ joinId: "" })}>
+                            X
+                          </button>
                         </div>
-                        <div className="interactable aesthetic-windows-95-button" style={{ flexShrink: 3 }}>
-                          <button 
-                            onClick={() => this.tryServerJoin()} 
+                        <div
+                          className="interactable aesthetic-windows-95-button"
+                          style={{ flexShrink: 3 }}
+                        >
+                          <button
+                            onClick={() => this.tryServerJoin()}
                             disabled={
-                              this.state.joinId.length!==cfg.maxRoomIdLength ||
-                              this.state.joinId===defaultId
+                              this.state.joinId.length !==
+                                cfg.maxRoomIdLength ||
+                              this.state.joinId === defaultId
                             }
                           >
                             join

@@ -106,7 +106,7 @@ def init_game(room):
         bababooi_init_round(game)
 
 def bababooi_init_round(game):
-    state = game.gameSpecificData
+    state = {}
     num_classes = len(bababooi_data['info']['class_names'])
     classes = random.sample(range(0, num_classes), 2)
     startClassName = bababooi_data['info']['class_names'][classes[0]]
@@ -118,6 +118,7 @@ def bababooi_init_round(game):
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
     state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
     state['state'] = 'playing'
+    game.gameSpecificData = state
 
 def bababooi_end_round(game):
     game.gameSpecificData['state'] = 'reviewing'
