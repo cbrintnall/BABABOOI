@@ -9,6 +9,7 @@ app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
+preload()
 
 @app.route('/status', methods=['GET'])
 def status():
@@ -119,5 +120,4 @@ def preload():
     # print(json.content)
 
 if __name__ == '__main__':
-    preload()
     socketio.run(app)
