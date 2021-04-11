@@ -114,7 +114,7 @@ def is_round_over(data):
     packet = json.loads(data)
     room = packet['room']
     if gamestate.is_round_over(room):
-        gamestate.bababooi_end_round(gamestate.games[room])
+        gamestate.bababooi_end_round2(gamestate.games[room])
         broadcast_gamestate(room)
 
 @socketio.on('start_next_round')

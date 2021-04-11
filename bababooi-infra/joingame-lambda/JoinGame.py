@@ -97,10 +97,3 @@ def lambda_handler(event, context):
             'statusCode': 500,
             'error': 'UnknownError'
         }
-
-
-    # If we got this far, we have a hostname
-    
-
-
-print(lambda_handler({'userId':'test3'}, None))

@@ -2,7 +2,7 @@
 
 Run the following to start serving the models via Flask. The only serving requirements are *flask*, *numpy*, *transformers*, and *onnxruntime*.
 ```shell
-FLASK_APP=serve.py MODEL=[path-to-onnx-file] flask run
+FLASK_APP=serve.py QUICKDRAW_MDL=onnx/quickdraw.onnx NLPFEUD_MDL=onnx/nlpfeud.onnx flask run
 ```
 
 ## API
