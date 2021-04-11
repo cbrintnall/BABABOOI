@@ -7,6 +7,8 @@ name = "pypi"
 Flask = "==1.1.2"
 Flask-SocketIO = "==5.0.1"
 pillow = "*"
+boto3 = "*"
+flask-cors = "*"
 
 [dev-packages]
 
