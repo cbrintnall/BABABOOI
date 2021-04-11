@@ -2,6 +2,7 @@ __pycache__
 server/__pycache__
 
 node_modules/
+*.log
 bababooi-ml/lightning_logs/
 bababooi-ml/raw_data/
 bababooi-ml/splits/
