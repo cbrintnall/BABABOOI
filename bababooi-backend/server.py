@@ -40,7 +40,7 @@ def broadcast_gamestate(room):
 @socketio.on('handshake')
 def handshake(data):
     packet = json.loads(data)
-    join_loop(packet['room'])
+    join_room(packet['room'])
     broadcast_gamestate(packet['room'])
 
 @socketio.on('leave_game')
@@ -53,9 +53,9 @@ def leave_game(data):
 @socketio.on('choose_game')
 def choose_game(data):
     packet = json.loads(data)
-    err = gamestate.change_mode(packet)
+    err = gamestate.choose_game(packet)
     if err != '':
-        emit('error', error)
+        emit('error', err)
         return
     broadcast_gamestate(packet['room'])
 
@@ -64,7 +64,7 @@ def start_game(data):
     packet = json.loads(data)
     err = gamestate.start_game(packet)
     if err != '':
-        emit('error', error)
+        emit('error', err)
         return
     broadcast_gamestate(packet['room'])
 
