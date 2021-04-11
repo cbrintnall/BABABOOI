@@ -103,6 +103,13 @@ def start_game(data):
         return
     broadcast_gamestate(packet['room'])
 
+    # Hacky patch to assure newRound=False for every other call
+    room = packet['room']
+    game = gamestate.games[room]
+    if game.gameType == 'bababooi':
+        game.gameState['newRound'] = False
+
+
 @socketio.on('start_next_round')
 def start_next_round(data):
     packet = json.loads(data)

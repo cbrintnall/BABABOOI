@@ -155,21 +155,28 @@ def masked_feud_init_round(game):
 
 
 def bababooi_init_round(game):
-    state = {}
-    num_classes = len(bababooi_data['info']['class_names'])
-    classes = random.sample(range(0, num_classes), 2)
-    startClassName = bababooi_data['info']['class_names'][classes[0]]
-    img_idx = random.randint(0, len(bababooi_data['img'][startClassName]))
-    state['startingClassIdx'] = classes[0]
-    state['targetClassIdx'] = classes[1]
-    state['startingClassName'] = bababooi_data['info']['proper_names'][classes[0]]
-    state['targetClassName'] = bababooi_data['info']['proper_names'][classes[1]]
+    state = game.gameSpecificData
+
+    # Determine the two classes we're competing against eachother
+    source_class_index, target_class_index = random.sample(range(num_classes), 2)
+    state['startingClassIdx'] = source_class_index
+    state['targetClassIdx'] = target_class_index
+    state['startingClassName'] = bababooi_data['info']['proper_names'][source_class_index]
+    state['targetClassName'] = bababooi_data['info']['proper_names'][target_class_index]
+
+    # Choose a random image from our source class to give each player
+    startClassName = bababooi_data['info']['class_names'][source_class_index]
+    img_idx = random.randint(len(bababooi_data['img'][startClassName]))
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
+
+    # Set timing information for this round
     state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
     state['startDelayInSecs'] = START_DELAY_IN_SECS
     state['roundLengthInSecs'] = ROUND_LEN_IN_SECS
-    state['state'] = 'playing'
+    state['newRound'] = True
+
     game.gameSpecificData = state
+
 
 def bababooi_start_next_round(game):
     game = games[room]
