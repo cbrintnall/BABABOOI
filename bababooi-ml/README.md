@@ -32,6 +32,6 @@ print(response.json())
 
 # NLP Feud Text
 text = 'I love driving my [MASK] to work!'
-json = requests.post('http://127.0.0.1:5000/nlpfeud', json=text)
+response = requests.post('http://127.0.0.1:5000/nlpfeud', json=text)
 print(response.json())
 ```
