@@ -213,11 +213,14 @@ def bababooi_end_round2(game):
         images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
 
     response = requests.post('http://localhost:5000/quickdraw', json=images)
-    img_probs = response.json()
-    if img_probs:
-        for i in range(len(game.players)):
-            score = img_probs[i][game.gameSpecificData['targetClassIdx']]
-            game.players[i].totalScore = int(100.0 * score)
+    try:
+        img_probs = response.json()
+        if img_probs:
+            for i in range(len(game.players)):
+                score = img_probs[i][game.gameSpecificData['targetClassIdx']]
+                game.players[i].totalScore = int(100.0 * score)
+    except:
+        pass # ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
     
     # Calculate scores
 
