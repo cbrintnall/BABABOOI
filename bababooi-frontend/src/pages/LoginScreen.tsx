@@ -1,6 +1,6 @@
 import React, { CSSProperties } from "react";
 import { RouteComponentProps } from "react-router-dom";
-import { newUserSubject } from "../events";
+import { errorSubject, newUserSubject } from "../events";
 
 const style: CSSProperties = {
   width: "100%",
@@ -49,6 +49,7 @@ export class LoginScreen extends React.Component<
                 onClick={() => {
                   if (this.state.login.length > 0) {
                     newUserSubject.next({ username: this.state.login });
+                    errorSubject.next({ good: true, userMessage: `Welcome, ${this.state.login}` })
                     this.props.history.push('/game')
                   }
                 }}

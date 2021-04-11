@@ -1,6 +1,6 @@
 import React, { createRef, RefObject } from "react";
 import cfg from "./config";
-import { eraseCanvasSubject, newImageSubmissionSubject, newImageSubmittedSubject } from "./events";
+import { eraseCanvasSubject, newDisplayImageSubject, newImageSubmissionSubject, newImageSubmittedSubject } from "./events";
 
 export type Point = {
   x: number;
@@ -9,6 +9,7 @@ export type Point = {
 
 type DrawerState = {
   drawing: boolean;
+  baseData: Array<any>;
 };
 
 type DrawerProps = {
@@ -17,6 +18,7 @@ type DrawerProps = {
 }
 
 class Drawer extends React.Component<DrawerProps, DrawerState> {
+  baseCanvasRef: RefObject<HTMLCanvasElement>;
   canvasRef: RefObject<HTMLCanvasElement>;
   ctx?: CanvasRenderingContext2D;
 
@@ -24,7 +26,19 @@ class Drawer extends React.Component<DrawerProps, DrawerState> {
     super(props);
 
     this.canvasRef = createRef<HTMLCanvasElement>();
-    this.state = { drawing: false };
+    this.baseCanvasRef = createRef<HTMLCanvasElement>();
+    this.state = { drawing: false, baseData: [] };
+  }
+
+  resetCanvasState() {
+    if (this.ctx) {
+      this.ctx.fillStyle = cfg.backgroundColor;
+      this.ctx.fillRect(0, 0, 512, 512);
+      this.ctx.lineWidth = cfg.lineWidth;
+      this.ctx.strokeStyle = cfg.drawColor;
+      this.ctx.lineJoin = "bevel";
+      this.ctx.lineCap = "round";
+    }
   }
 
   componentDidMount() {
@@ -32,12 +46,20 @@ class Drawer extends React.Component<DrawerProps, DrawerState> {
       this.ctx = this.canvasRef.current.getContext("2d") ?? undefined;
 
       if (this.ctx) {
-        this.ctx.fillStyle = cfg.backgroundColor;
-        this.ctx.fillRect(0, 0, 500, 500);
-        this.ctx.lineWidth = cfg.lineWidth;
-        this.ctx.strokeStyle = cfg.drawColor;
-        this.ctx.lineJoin = "bevel";
-        this.ctx.lineCap = "round";
+        this.resetCanvasState();
+      }
+
+      if (this.baseCanvasRef.current) {
+        const baseCtx = this.baseCanvasRef.current.getContext("2d");
+
+        if (baseCtx) {
+          baseCtx.fillStyle = cfg.backgroundColor;
+          baseCtx.fillRect(0, 0, 512, 512);
+          baseCtx.lineWidth = cfg.lineWidth;
+          baseCtx.strokeStyle = cfg.drawColor;
+          baseCtx.lineJoin = "bevel";
+          baseCtx.lineCap = "round";
+        }
       }
 
       this.canvasRef.current.onmousedown = (e: MouseEvent) =>
@@ -50,8 +72,24 @@ class Drawer extends React.Component<DrawerProps, DrawerState> {
     }
 
     eraseCanvasSubject.subscribe(() => {
-      this.ctx?.clearRect(0, 0, this.props.width || 500, this.props.height || 500);
-      this.ctx?.fillRect(0, 0, this.props.width || 500, this.props.height || 500);
+      this.ctx?.clearRect(0, 0, this.props.width || 512, this.props.height || 512);
+      this.ctx?.fillRect(0, 0, this.props.width || 512, this.props.height || 512);
+    })
+
+    newDisplayImageSubject.subscribe(data => {
+      if (this.ctx) {
+        const dd = data as Array<any>;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(dd[0][0], dd[0][1]);
+        dd.forEach((val: Array<any>, pIdx: number) => {
+          val[0].forEach((pt: Array<any>, idx: number) => {
+            this.ctx?.lineTo(val[0][idx], val[1][idx])
+          })
+        })
+        this.ctx.closePath();
+        this.ctx.stroke();
+      }
     })
 
     newImageSubmissionSubject.subscribe(() => {
@@ -112,7 +150,7 @@ class Drawer extends React.Component<DrawerProps, DrawerState> {
 
   render() {
     return (
-      <div>
+      <div style={{position:'relative'}}>
         <canvas
           ref={this.canvasRef} 
           height={this.props.height} 

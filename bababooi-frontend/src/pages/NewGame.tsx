@@ -2,7 +2,7 @@ import React, { CSSProperties } from "react";
 import { RouteComponentProps } from "react-router-dom";
 import { requestGame } from "../api-calls";
 import cfg from "../config";
-import { errorSubject, serverJoinSubject } from "../events";
+import { errorSubject, newUserSubject } from "../events";
 import { getUsername } from '../App';
 
 const defaultId = "ZGH69Q";
@@ -17,6 +17,7 @@ const style: CSSProperties = {
 type NewGameState = {
   joining: boolean;
   joinId: string;
+  username: string;
 };
 
 class NewGame extends React.Component<RouteComponentProps, NewGameState> {
@@ -26,6 +27,7 @@ class NewGame extends React.Component<RouteComponentProps, NewGameState> {
     this.state = {
       joining: false,
       joinId: defaultId,
+      username: getUsername()!
     };
   }
 
@@ -67,15 +69,17 @@ class NewGame extends React.Component<RouteComponentProps, NewGameState> {
   }
 
   render() {
+    const txt = `WELCOME TO THE CLUB, ${getUsername()}`;
+
     return (
       <div className="aesthetic-blue-bg-color" style={style}>
         <div>
           <h1
             style={{ paddingLeft: "24px" }}
             className="aesthetic-effect-text-glitch"
-            data-glitch="WELCOME"
+            data-glitch={txt}
           >
-            WELCOME
+            { txt }
           </h1>
           <div
             className="aesthetic-windows-95-modal"
@@ -88,7 +92,12 @@ class NewGame extends React.Component<RouteComponentProps, NewGameState> {
               <div className="aesthetic-windows-95-modal-title-bar-controls">
                 <div className="aesthetic-windows-95-button-title-bar">
                   <div style={{ display: "flex", flexDirection: "row" }}>
-                    <button onClick={() => console.error("no")}>X</button>
+                    <button onClick={() => { 
+                      if (localStorage) {
+                        localStorage.setItem("USERNAME", "")
+                        this.props.history.push("/login")
+                      }
+                    }}>X</button>
                   </div>
                 </div>
               </div>

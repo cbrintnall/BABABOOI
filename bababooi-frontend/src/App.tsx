@@ -2,7 +2,13 @@ import "./App.css";
 import "aesthetic-css/aesthetic.css";
 
 import React, { useEffect, useState } from "react";
-import { BrowserRouter as Router, Switch, Route, Link, Redirect } from "react-router-dom";
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  Link,
+  Redirect,
+} from "react-router-dom";
 import { LandingPage } from "./pages/Landing";
 import { NewGame } from "./pages/NewGame";
 import { LoginScreen } from "./pages/LoginScreen";
@@ -16,8 +22,8 @@ type User = {
 export const UserContext = React.createContext<User | undefined>(undefined);
 
 export const getUsername = (): string | undefined => {
-  return localStorage.getItem('USERNAME') || undefined;
-}
+  return localStorage.getItem("USERNAME") || undefined;
+};
 
 function NotificationsHost() {
   const [error, setError] = useState<ErrorEvent>();
@@ -25,6 +31,9 @@ function NotificationsHost() {
   useEffect(() => {
     errorSubject.subscribe((errorEvent) => setError(errorEvent));
   }, []);
+
+  const url = error?.good ? "/happy.png" : "/error.png";
+  const msg = error?.good ? error?.userMessage : `ERROR: ${error?.userMessage}`
 
   return (
     <div style={{ position: "fixed", left: "30px", bottom: "30px" }}>
@@ -39,7 +48,7 @@ function NotificationsHost() {
               flexDirection: "row",
               paddingRight: "32px",
             }}
-            className="aesthetic-notification-content aesthetic-pepsi-red-color"
+            className={`aesthetic-notification-content ${error?.good ? "aesthetic-arizona-blue-color":"aesthetic-pepsi-red-color"}`}
           >
             <div>
               <div className="aesthetic-effect-crt">
@@ -47,14 +56,14 @@ function NotificationsHost() {
                   style={{
                     height: "50px",
                     width: "50px",
-                    background: 'url("/error.png")',
+                    background: `url(${url})`,
                     backgroundSize: "contain",
                   }}
                 ></div>
               </div>
               <span style={{ verticalAlign: "100%" }}>
                 {" "}
-                {`ERROR: ${error.userMessage}`}{" "}
+                {msg}{" "}
               </span>
             </div>
           </div>
@@ -65,75 +74,57 @@ function NotificationsHost() {
 }
 
 function App() {
-  const [ user, setUser ] = useState<User|undefined>(undefined);
-
   useEffect(() => {
     if (localStorage) {
-      // const user = localStorage.getItem('USERNAME')
-
-      // if (user) {
-      //   setUser({ username: user })
-      // }
-
       newUserSubject.subscribe((user) => {
-        localStorage.setItem('USERNAME', user.username);
-        // setUser({ username: user.username })
+        localStorage.setItem("USERNAME", user.username);
       });
     }
-  }, [])
+  }, []);
 
   return (
     <Router>
       <div id="app">
         <NotificationsHost />
         <Switch>
-          <UserContext.Provider value={user}>
-            <Route
-              exact
-              path="/login"
-              render={(routeProps) => { 
-                if (getUsername()) {
-                  return <Redirect to="/game" />
-                }
-              
-                return <LoginScreen {...routeProps} />
-              }}
-            />
-            <Route
-              exact
-              path="/drawing/:gameId"
-              render={(routeProps) => {
-               if (!getUsername()) {
-                 console.log(getUsername())
-                 return <Redirect to="/login" />
-               }
-               
-               return <DrawingGame {...routeProps} />
-              }}
-            />
-            <Route
-              exact
-              path="/game"
-              render={(routeProps) => { 
-                if (!getUsername()) {
-                  return <Redirect to="/login" />
-                }
+          <Route
+            exact
+            path="/login"
+            render={(routeProps) => {
+              if (getUsername()) {
+                return <Redirect to="/game" />;
+              }
 
-                return <NewGame {...routeProps} /> 
-              }}
-            />
-            <Route
-              exact
-              path="/"
-              render={(routeProps) => { 
-                if (!getUsername()) {
-                  return <Redirect to="/login" />
-                }
+              return <LoginScreen {...routeProps} />;
+            }}
+          />
+          <Route
+            exact
+            path="/drawing/:gameId"
+            render={(routeProps) => {
+              if (!getUsername()) {
+                return <Redirect to="/login" />;
+              }
 
-                return <LandingPage {...routeProps} /> 
-              }}
-            />
-          </UserContext.Provider>
+              return <DrawingGame {...routeProps} />;
+            }}
+          />
+          <Route
+            exact
+            path="/game"
+            render={(routeProps) => {
+              if (!getUsername()) {
+                return <Redirect to="/login" />;
+              }
+
+              return <NewGame {...routeProps} />;
+            }}
+          />
+          <Route
+            exact
+            path="/"
+            render={(routeProps) => <LandingPage {...routeProps} />}
+          />
         </Switch>
       </div>
     </Router>

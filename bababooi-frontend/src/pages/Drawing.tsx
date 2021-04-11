@@ -5,8 +5,8 @@ import { io } from "socket.io-client";
 import { Socket } from "socket.io";
 import { Drawer } from "../Drawing";
 import cfg from "../config";
-import { eraseCanvasSubject, newImageSubmissionSubject } from "../events";
-import { getUsername, UserContext } from "../App";
+import { newDisplayImageSubject, newImageSubmissionSubject, newImageSubmittedSubject } from "../events";
+import { getUsername } from "../App";
 
 type GameUrlParams = {
   gameId: string;
@@ -17,11 +17,23 @@ type Player = {
   isOwner: boolean;
 };
 
+type BabaBooiSpecificData = {
+  startingClassName: string;
+  targetClassName: string;
+  startingImg: any;
+  startDelayInSecs: number;
+  roundLengthInSecs: number;
+  newRound: boolean;
+  state: "playing" | "reviewing";
+};
+
+type GameSpecificData = BabaBooiSpecificData;
+
 type GameState = {
   room: string;
   gameType: string;
   gameState: string;
-  gameSpecificData: {};
+  gameSpecificData: GameSpecificData;
   players?: Player[];
 };
 
@@ -44,22 +56,6 @@ class DrawingGame extends React.Component<
     this.state = {
       drawWidth: 500,
       drawHeight: 500,
-      // gameState: {
-      //   room: "ZZZAAA",
-      //   gameType: "bababooi",
-      //   gameState: "playing",
-      //   gameSpecificData: {},
-      //   players: [
-      //     {
-      //       name: "player1",
-      //       isOwner: true,
-      //     },
-      //     {
-      //       name: "player2",
-      //       isOwner: false,
-      //     },
-      //   ],
-      // },
     };
 
     this.drawDivParent = createRef<HTMLDivElement>();
@@ -86,21 +82,18 @@ class DrawingGame extends React.Component<
 
   sizeCanvas() {
     if (this.drawDivParent.current) {
-      const drawHeight = Math.min(
-        window.innerHeight,
-        this.drawDivParent.current.clientHeight
-      );
-
-      // console.log(drawHeight)
-
-      // this.setState({
-      //   drawHeight,
-      //   drawWidth:drawHeight
-      // })
     }
   }
 
-  undo() {}
+  getRoundInfoComponents() {
+    const { startingClassName, targetClassName } = this.state.gameState!.gameSpecificData;
+
+    return (
+      <h3 style={{paddingLeft: '12px'}}>
+        ok, heres a <u className="aesthetic-green-color">{startingClassName}</u>, make it think it's a <u className="aesthetic-arizona-pink-color">{targetClassName}</u>
+      </h3>
+    )
+  }
 
   handleJoin() {
     const queryStrings = parseQueryString(this.props.location.search);
@@ -115,13 +108,22 @@ class DrawingGame extends React.Component<
     const host = (cleanedQs as any).host;
 
     if (host) {
-      this.connection = (io(host, { reconnectionAttempts: 5 }) as unknown) as Socket<any, any>;
+      this.connection = (io(host, {
+        reconnectionAttempts: 5,
+      }) as unknown) as Socket<any, any>;
 
       this.connection.on("gamestate", (state: string) => {
-        console.log(JSON.parse(state));
         this.setState({ gameState: JSON.parse(state) }, () => {
+          console.log(this.state);
+
           if (this.state.gameState?.room) {
             localStorage.setItem("LAST_JOINED", this.state.gameState?.room);
+          }
+
+          if (this.state.gameState?.gameSpecificData.startingImg) {
+            newDisplayImageSubject.next(
+              this.state.gameState?.gameSpecificData.startingImg
+            );
           }
         });
       });
@@ -130,6 +132,16 @@ class DrawingGame extends React.Component<
         "handshake",
         JSON.stringify({ room: this.getGameId() })
       );
+
+      newImageSubmittedSubject.subscribe((img) => {
+        const submissionData = {
+          data: img,
+          room: this.getGameId(),
+          name: getUsername(),
+        };
+
+        this.connection?.emit("submit_image", JSON.stringify(submissionData));
+      });
     }
   }
 
@@ -153,7 +165,7 @@ class DrawingGame extends React.Component<
         JSON.stringify({ room: this.getGameId(), name: getUsername() })
       );
 
-      this.props.history.push('/')
+      this.props.history.push("/game");
     }
   }
 
@@ -163,13 +175,6 @@ class DrawingGame extends React.Component<
         style={{ height: "100%", width: "100%" }}
         className="aesthetic-blue-bg-color"
       >
-        <h2
-          style={{ paddingLeft: "24px" }}
-          className="aesthetic-effect-text-glitch"
-          data-glitch="_-_-_-++_-_--__"
-        >
-          ROOM ID: { this.state.gameState?.room }
-        </h2>
         <div
           className="aesthetic-windows-95-modal"
           style={{ marginLeft: "64px" }}
@@ -201,18 +206,22 @@ class DrawingGame extends React.Component<
               <div className="aesthetic-windows-95-button">
                 <button onClick={() => this.leaveSession()}>LEAVE</button>
               </div>
-              <span style={{ marginLeft: "12px", marginRight: "12px" }}>
-                {" "}
-                |{" "}
-              </span>
+              {this.state.gameState?.gameState === "playing" && (
+                <span style={{ marginLeft: "12px", marginRight: "12px" }}>
+                  {" "}
+                  |{" "}
+                </span>
+              )}
               {this.state.gameState?.gameState === "playing" && (
                 <div className="aesthetic-windows-95-button">
-                  <button onClick={() => newImageSubmissionSubject.next()}>SUBMIT</button>
+                  <button onClick={() => newImageSubmissionSubject.next()}>
+                    SUBMIT
+                  </button>
                 </div>
               )}
-              <div className="aesthetic-windows-95-button">
+              {/* <div className="aesthetic-windows-95-button">
                 <button onClick={() => eraseCanvasSubject.next()}>CLEAR</button>
-              </div>
+              </div> */}
             </div>
             <hr />
             <div style={{ display: "flex", flexDirection: "row" }}>
@@ -232,7 +241,6 @@ class DrawingGame extends React.Component<
               <div
                 ref={this.drawDivParent}
                 className="aesthetic-windows-95-container-indent"
-                onChange={console.log}
                 style={{
                   marginLeft: "4px",
                   width: "100%",
@@ -240,10 +248,34 @@ class DrawingGame extends React.Component<
                   justifyContent: "center",
                 }}
               >
+                <div style={{ width: "100%" }}>
+                  <h2 style={{ paddingLeft: "24px", color: "black" }}>
+                    { `ROOM ID: "${this.state.gameState?.room}" <== send to your 🌈f r i e n d s🌈` }
+                  </h2>
+                  <h4 className="aesthetic-green-color"> how to plaaay: </h4>
+                  <ol>
+                    <li> view base image </li>
+                    <li> acknowledge what it is (ex: <u className="aesthetic-arizona-pink-color">cat</u>) </li>
+                    <li> acknowledge what you're supposed to draw (ex: <u className="aesthetic-arizona-blue-color">dog</u>) </li>
+                    <li> draw over <u className="aesthetic-arizona-pink-color">cat</u> and try to make the Ą͝Į̕ think it's <u className="aesthetic-arizona-blue-color">dog</u> </li>
+                    <li> a̭͈̰̬d̗͕̞̗̩͢ḓ̢̘̟̣r̸̺̬͚̩̪̬̪e͚̹͎̤͟s̢͏̼̗͍s͙̫͢͡ ̛̯̟̜̭͎͠y̡͈̬̟͓ͅͅọ̕u͇̻̫̰̫͉r҉͚̞͕̝̭͇̭̻ ̢̖͔̣͕̗̪͝͠i̻̮͇̥n̤̬͇̲̺̝̻͔͜n̡͏̳e̹̮̱̫̱̼͜r̷̲̺͇̜͈̬̭ ̰̬̘͓̕f̛͍̺̕è͉̪̫͉̺̜a̯̟͈͖̻̫̱͡ṛ͉̫̤̼̰̘ͅs҉͇̻̬̗͞ </li>
+                    <li> win! </li>
+                  </ol>
+                  <h4 className="aesthetic-pink-color"> R U L E S: </h4>
+                  <ol>
+                    <li> you cannot erase, get it right the first time </li>
+                  </ol>
+                </div>
                 <Drawer
                   height={this.state.drawHeight}
                   width={this.state.drawWidth}
                 />
+                <div style={{ width: "100%" }}>
+                  {
+                    this.state.gameState?.gameState === "playing" &&
+                    this.getRoundInfoComponents()
+                  }
+                </div>
               </div>
             </div>
           </div>
