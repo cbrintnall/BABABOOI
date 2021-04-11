@@ -18,16 +18,19 @@ def status():
 
 @app.route('/create', methods=['POST'])
 def create():
-    if 'username' not in request.args.keys() or 'sessionId' not in request.args.keys():
-        return app.response_class(response="Missing param", status=404)
-    user = request.args['username']
-    room = request.args['sessionId']
+    if 'username' not in request.json or 'sessionId' not in request.json:
+        return app.response_class(response="Missing param", status=400)
+    user = request.json['username']
+    room = request.json['sessionId']
+    
+    print()
 
-    if 'create' not in request.args.keys():
+    if 'create' not in request.json:
         err = gamestate.create_player_in_room(room, user)
     else:
         err = gamestate.create_room_with_player(room, user)
-    code = 200 if err == '' else 404
+    print(err)
+    code = 200 if err == '' else 400
     return app.response_class(response=err, status=code)
 
 def broadcast_gamestate(room):
