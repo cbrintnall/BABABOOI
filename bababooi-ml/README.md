@@ -12,6 +12,7 @@ FLASK_APP=serve.py MODEL=[path-to-onnx-file] flask run
 | POST        | /predict    | List of base64 encoded images | List of probability distributions |
 
 ## Minimal Python Example
+
 ```python
 import base64
 import requests
