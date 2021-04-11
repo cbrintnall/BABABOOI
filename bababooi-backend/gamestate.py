@@ -1,5 +1,8 @@
-from dataclasses import dataclass, field
+import math
 import random
+import requests
+
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 MAX_GAMES = 10
@@ -8,7 +11,7 @@ MAX_GAMES = 10
 class Player:
     name: str
     isOwner: bool = False
-    roundScore: int = 0
+    gameScore: int = 0
     totalScore: int = 0
     def to_dict(self):
         return {"name": self.name, "isOwner": self.isOwner}
@@ -35,9 +38,16 @@ class GameSession:
                 return player
         return None
 
-games = {}
+    def reset(self):
+        for p in self.players:
+            p.gameScore = 0
+        self.gameSpecificData = {}
+        self.roundNo = 0
+        self.gameState = "lobby"
 
+games = {}
 bababooi_data = {}
+masked_feud_data = {}
 
 def create_room_with_player(room, user):
     if room in games.keys():
@@ -96,10 +106,40 @@ def init_game(room):
         return "Room doesn't exist!"
     game = games[room]
     mode = game.gameType
-    game.gameSpecificData = {}
+
     if mode == 'bababooi':
         game.roundLimit = 3
         bababooi_init_round(game)
+    elif mode == 'masked_feud':
+        game.roundLimit = 3
+        masked_feud_init_round(game)
+    else:
+        return "Game doesn't exist"
+
+    return None
+
+def masked_feud_init_round(game):
+    state = game.gameSpecificData
+
+    # Select our prompts for this game
+    state['prompts'] = random.sample(masked_feud_data['prompts'], game.roundLimit)
+    state['prompt_answers'] = []
+
+    p = random.choice(game.players)
+    state['current_player'] = p.name
+    state['current_player_index'] = game.players.index(p)
+
+    for p in state['prompts']:
+        json = requests.post('http://127.0.0.1:5001/nlpfeud', json=p).json()
+
+        state['prompt_answers'].append({})
+        for k, v in json['probs']:
+            worth = math.ceil(v * 100)
+            state['prompt_answers'][-1][k] = {
+                'worth' : worth,
+                'revealed' : False
+            }
+
 
 def bababooi_init_round(game):
     state = game.gameSpecificData
@@ -131,10 +171,11 @@ def start_game(json):
         return "Can't start the game while already playing!"
     # Clear player prev round scores
     for player in games[room].players:
-        player.roundScore = 0
+        player.gameScore = 0
     games[room].gameState = 'playing'
-    init_game(room)
-    return ''
+    result = init_game(room)
+    return '' if result is None else result
+
 
 def get_gamestate(room):
     if room not in games.keys():
@@ -153,6 +194,53 @@ def submit_image(json):
     name = json['name']
     img = json['data'] # TODO: decode img
     game = games[room]
+
+
+def submit_text(json):
+    name, room, text = json['name'], json['room'], json['text']
+    game = games[room]
+
+    if game.gameType == 'masked_feud':
+        return handle_masked_feud_submit_text(game, text)
+    else:
+        return "Current game doesn't support submit text"
+
+
+
+def handle_masked_feud_submit_text(game, text):
+    state = game.gameSpecificData
+
+    round_over = False
+    game_over = False
+    prompt_answers = state['prompt_answers'][game.roundNo]
+
+    # The text is an answer and was not revealed yet
+    if text in prompt_answers and not prompt_answers[text]['revealed']:
+        # Answer is now revealed
+        prompt_answers[text]['revealed'] = True
+
+        # Get current player and set their score
+        player = game.players[state['current_player_index']]
+        player.gameScore += prompt_answers[text]['worth']
+
+        round_over = all([prompt_answers[k]['revealed'] for k in prompt_answers])
+
+        if round_over:
+            game.roundNo += 1
+            game_over = game.roundNo == game.roundLimit
+
+    if game_over:
+        # If the game is over, determine who won this game and return us to the lobby
+        winning_player = max(game.players, key=lambda p : p.gameScore)
+        winning_player.totalScore += 1
+        game.reset()
+    else:
+        # If the game isn't over, just choose whoever is next
+        state['current_player_index'] = (state['current_player_index'] + 1) % len(game.players)
+        state['current_player'] = game.players[state['current_player_index']].name
+
+    return ''
+
 
 def get_server_status():
     result = {}

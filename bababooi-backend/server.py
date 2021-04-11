@@ -23,7 +23,7 @@ def create():
         return app.response_class(response="Missing param", status=400)
     user = request.args['username']
     room = request.args['sessionId']
-    
+
     if 'create' not in request.args:
         err = gamestate.create_player_in_room(room, user)
     else:
@@ -77,7 +77,7 @@ def submit_image(data):
 @socketio.on('submit_text')
 def submit_text(data):
     packet = json.loads(data)
-    err = gamestate.submit_image(json)
+    err = gamestate.submit_text(packet)
     if err != '':
         emit('error', err)
         return
@@ -106,6 +106,14 @@ def preload():
     else:
         with open('cached_bababooi.txt', 'r') as fp:
             gamestate.bababooi_data = json.loads(fp.read())
+
+    gamestate.masked_feud_data['prompts'] = []
+    gamestate.masked_feud_data['prompts'].append('I love eating [MASK].')
+    gamestate.masked_feud_data['prompts'].append('The first thing I do after work is [MASK].')
+    gamestate.masked_feud_data['prompts'].append('Who ate my [MASK]?')
+    gamestate.masked_feud_data['prompts'].append('I prefer [MASK] over dogs.')
+    gamestate.masked_feud_data['prompts'].append('I no longer love [MASK].')
+
     # print(gamestate.bababooi_data['info'])
     # print(gamestate.bababooi_data['img']['tennis_racquet'])
 
