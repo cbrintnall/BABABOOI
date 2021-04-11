@@ -104,10 +104,13 @@ def bababooi_init_round(game):
     state = game.gameSpecificData
     num_classes = len(bababooi_data['info']['class_names'])
     classes = random.sample(range(0, num_classes), 2)
-    # state['startingClass'] = 
-    state['targetClass'] = classes[0]
-    state['startingImg'] = classes[1]
-    state['finalImg'] = 'bla'
+    startClassName = bababooi_data['info']['class_names'][classes[0]]
+    img_idx = random.randint(0, len(bababooi_data['img'][startClassName]))
+    state['startingClassIdx'] = classes[0]
+    state['targetClassIdx'] = classes[1]
+    state['startingClassName'] = bababooi_data['info']['proper_names'][classes[0]]
+    state['targetClassName'] = bababooi_data['info']['proper_names'][classes[1]]
+    state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
     state['startingTime'] = ''
 
 def bababooi_score_round(game):
@@ -136,11 +139,12 @@ def get_gamestate(room):
     if room not in games.keys():
         return None
     res = {}
+    game = games[room]
     res['room'] = room
-    res['gameType'] = games[room].gameType
-    res['gameState'] = games[room].gameState
-    res['gameSpecificData'] = games[room].gameSpecificData
-    res['players'] = games[room].get_player_array()
+    res['gameType'] = game.gameType
+    res['gameState'] = game.gameState
+    res['gameSpecificData'] = game.gameSpecificData
+    res['players'] = game.get_player_array()
     return res
 
 def get_server_status():

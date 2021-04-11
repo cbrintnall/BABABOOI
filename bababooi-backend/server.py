@@ -91,7 +91,8 @@ def preload():
         imgFileStr = imgs.get()['Body'].read()
         for line in imgFileStr.splitlines():
             gamestate.bababooi_data['img'][class_name].append(json.loads(line))
-    print(gamestate.bababooi_data['info'])
+    # print(gamestate.bababooi_data['info'])
+    # print(gamestate.bababooi_data['img']['tennis_racquet'])
 
     # images = [Image.new('L', (256, 256)) for _ in range(4)]
     # for i, image in enumerate(images):
