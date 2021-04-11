@@ -30,7 +30,6 @@ def img_from_b64(img_b64):
     img = np.expand_dims(np.array(img), axis=0)
     img = img.astype(np.float32)
     img = img / 255.0
-    print(img.max())
     return img.astype(np.float32)
 
 
