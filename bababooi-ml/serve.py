@@ -6,14 +6,15 @@ from PIL import Image
 from flask import Flask, jsonify, request
 import numpy as np
 import onnxruntime
+from transformers import pipeline
 
 
 app = Flask(__name__)
-model_pth = os.environ.get("MODEL")
-if model_pth is None:
-    raise ValueError('No model specified. Please specify the MODEL environment variable.')
-ort_session = onnxruntime.InferenceSession(model_pth)
+qd_mdl = os.environ.get("QUICKDRAW_MDL")
+nf_mdl = os.environ.get("NLPFEUD_MDL")
 
+ort_session_qd = onnxruntime.InferenceSession(qd_mdl)
+unmasker_nf = pipeline('fill-mask', model=nf_mdl)
 
 def img_from_b64(img_b64):
     # Convert b64 encoded bytes image to numpy
@@ -25,8 +26,8 @@ def img_from_b64(img_b64):
 
 def get_prediction(images):
     # Run image through network
-    ort_inputs = {ort_session.get_inputs()[0].name: np.stack(images)}
-    ort_outs = ort_session.run(None, ort_inputs)[0]
+    ort_inputs = {ort_session_qd.get_inputs()[0].name: np.stack(images)}
+    ort_outs = ort_session_qd.run(None, ort_inputs)[0]
 
     # Postprocess logits into class probabilities
     exp = np.exp(ort_outs)
@@ -34,12 +35,21 @@ def get_prediction(images):
     return probs
 
 
-@app.route('/predict', methods=['POST'])
-def predict():
+@app.route('/quickdraw', methods=['POST'])
+def predict_qd():
     if request.method == 'POST':
         images = [img_from_b64(img_64) for img_64 in request.json]
         probs = get_prediction(images)
         return jsonify({'probs': probs.tolist()})
+
+
+@app.route('/nlpfeud', methods=['POST'])
+def predict_nf():
+    if request.method == 'POST':
+        probs = unmasker_nf(request.json)
+        for i, dct in enumerate(probs):
+            probs[i] = [dct['token_str'], dct['score']]
+        return jsonify({'probs': probs})
 
 
 if __name__ == '__main__':
