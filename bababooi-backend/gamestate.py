@@ -174,6 +174,8 @@ def bababooi_init_round(game):
     state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
     state['startDelayInSecs'] = START_DELAY_IN_SECS
     state['roundLengthInSecs'] = ROUND_LEN_IN_SECS
+    # midround | reviewing | anticipating
+    state['state'] = 'playing'
     state['newRound'] = True
 
     game.gameSpecificData = state
@@ -323,7 +325,7 @@ def is_round_over(room):
     game = games[room]
     roundOver = True
     for player in game.players:
-        if img not in player.gameSpecificData.keys():
+        if "img" not in player.gameSpecificData.keys():
             roundOver = False
     return roundOver
 
