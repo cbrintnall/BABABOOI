@@ -10,3 +10,4 @@ bababooi-ml/splits/
 *.onnx
 *.terraform*
 bababooi-infra/terraform/builds*
+bababooi-infra/ddb-testing*
