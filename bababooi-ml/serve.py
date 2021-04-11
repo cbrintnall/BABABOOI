@@ -1,37 +1,44 @@
+import base64
 import io
-import json
-
-import torch
-from torchvision.transforms.functional import to_tensor
+import os
 from PIL import Image
-from flask import Flask, jsonify, request
 
-from models import DummyModel
+from flask import Flask, jsonify, request
+import numpy as np
+import onnxruntime
 
 
 app = Flask(__name__)
-model = DummyModel.load_from_checkpoint('lightning_logs/version_0/checkpoints/epoch=0-step=31.ckpt')
-model.eval()
+model_pth = os.environ.get("MODEL")
+if model_pth is None:
+    raise ValueError('No model specified. Please specify the MODEL environment variable.')
+ort_session = onnxruntime.InferenceSession(model_pth)
 
 
-def transform_image(img_bytes):
-    image = Image.open(io.BytesIO(img_bytes))
-    image = to_tensor(image).unsqueeze(0)
-    return image
+def img_from_b64(img_b64):
+    # Convert b64 encoded bytes image to numpy
+    img_bytes = base64.b64decode(img_b64)
+    img = Image.open(io.BytesIO(img_bytes))
+    img = np.expand_dims(np.array(img), axis=0)
+    return img.astype(np.float32)
 
 
-def get_prediction(img_bytes):
-    img = transform_image(img_bytes)
-    logits = model(img)
-    probs = torch.nn.functional.softmax(logits, dim=1)
+def get_prediction(images):
+    # Run image through network
+    ort_inputs = {ort_session.get_inputs()[0].name: np.stack(images)}
+    ort_outs = ort_session.run(None, ort_inputs)[0]
+
+    # Postprocess logits into class probabilities
+    exp = np.exp(ort_outs)
+    probs = exp / np.expand_dims(np.sum(exp, axis=1), axis=1)
     return probs
 
 
 @app.route('/predict', methods=['POST'])
 def predict():
     if request.method == 'POST':
-        file = request.files['images']
-        probs = get_prediction(file.read())
+        images = [img_from_b64(img_64) for img_64 in request.json]
+        probs = get_prediction(images)
         return jsonify({'probs': probs.tolist()})
 
 

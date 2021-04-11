@@ -1,9 +1,9 @@
-from pytorch_lightning import LightningModule
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 
 
-class DummyModel(LightningModule):
+class DummyModel(pl.LightningModule):
     def __init__(self, channels=1, classes=10):
         """Dummy model for testing ONNX exports and serving.
 
