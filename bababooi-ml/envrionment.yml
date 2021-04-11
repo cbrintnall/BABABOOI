@@ -1,6 +1,5 @@
-name: bababooi-ml
+name: bababooi
 channels:
-  - huggingface
   - pytorch
   - conda-forge
   - defaults
@@ -13,10 +12,10 @@ dependencies:
   - pytorch=1.8
   - scikit-image
   - torchvision=0.9
-  - transformers=4.4
   - pip:
     - pytorch-lightning==1.2
     - flask==1.1
     - onnx==1.8
-    - onnxruntime=1.7
-prefix: /home/ayalaa2/anaconda3/envs/bababooi-ml
+    - onnxruntime==1.7
+    - transformers==4.5
+prefix: /home/ayalaa2/anaconda3/envs/bababooi
