@@ -206,7 +206,7 @@ def bababooi_end_round2(game):
     for i in range(len(game.players)):
         player = game.players[i]
         im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
-        im = im.resize((256, 256), resample=PIL.Image.NEAREST)
+        im = im.resize((256, 256), resample=Image.NEAREST)
         im = im.convert(mode="L")
         im.resize((256, 256), resample=Image.NEAREST)
         image_bytes = io.BytesIO()
