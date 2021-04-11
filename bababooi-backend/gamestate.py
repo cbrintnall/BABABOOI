@@ -166,7 +166,7 @@ def bababooi_init_round(game):
 
     # Choose a random image from our source class to give each player
     startClassName = bababooi_data['info']['class_names'][source_class_index]
-    img_idx = random.randint(len(bababooi_data['img'][startClassName]))
+    img_idx = random.randint(0, len(bababooi_data['img'][startClassName]))
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
 
     # Set timing information for this round
