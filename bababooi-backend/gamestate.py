@@ -46,7 +46,7 @@ def create_player_in_room(room, user):
     for player in games[room].players:
         if player.name == user:
             return 'Player name is taken!'
-    games[room].players.append(Player(name, False))
+    games[room].players.append(Player(user, False))
     return ''
 
 def remove_player(json):

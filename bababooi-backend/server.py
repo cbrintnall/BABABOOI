@@ -23,13 +23,10 @@ def create():
     user = request.args['username']
     room = request.args['sessionId']
 
-    err = ''
     if 'create' not in request.args.keys():
         err = gamestate.create_player_in_room(room, user)
-        print(err)
     else:
         err = gamestate.create_room_with_player(room, user)
-        print(err)
     code = 200 if err == '' else 404
     return app.response_class(response=err, status=code)
 
