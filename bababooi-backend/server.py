@@ -103,6 +103,12 @@ def start_game(data):
         return
     broadcast_gamestate(packet['room'])
 
+    # Hacky patch to assure newRound=False for every other call
+    room = packet['room']
+    game = gamestate.games[room]
+    if game.gameType == 'bababooi':
+        game.gameState['newRound'] = False
+
 @socketio.on('is_round_over')
 def is_round_over(data):
     packet = json.loads(data)
@@ -110,7 +116,6 @@ def is_round_over(data):
     if gamestate.is_round_over(room):
         gamestate.bababooi_end_roud(gamestate.games[room])
         broadcast_gamestate(room)
-
 
 @socketio.on('start_next_round')
 def start_next_round(data):
