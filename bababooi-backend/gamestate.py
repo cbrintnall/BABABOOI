@@ -159,6 +159,7 @@ def bababooi_init_round(game):
     # Determine the two classes we're competing against eachother
     num_classes = len(bababooi_data['info']['class_names'])
     source_class_index, target_class_index = random.sample(range(num_classes), 2)
+    state['state'] = 'playing'
     state['startingClassIdx'] = source_class_index
     state['targetClassIdx'] = target_class_index
     state['startingClassName'] = bababooi_data['info']['proper_names'][source_class_index]
@@ -196,6 +197,7 @@ def bababooi_end_round(game):
 
     json = request.post('endpt', json=images)
     print(json.content)
+
 
 def start_game(json):
     room = json['room']
