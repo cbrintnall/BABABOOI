@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+MAX_GAMES = 10
+
 @dataclass
 class Player:
     name: str
@@ -11,7 +13,9 @@ class Player:
 class GameSession:
     room: str
     players: list = field(default_factory=list)
-    gameType: str = ""
+    gameType: str = "bababooi"
+    gameState: str = "lobby"
+    gameSpecific
 
     def get_player_array(self):
         player_array = []
@@ -19,20 +23,31 @@ class GameSession:
             player_array.append(player.to_dict())
         return player_array
 
+    def get_player(self, name):
+        for player in self.players:
+            if player.name == name:
+                return player
+        return None
+
 games = {}
 
-def add_player(json):
-    room = json['room']
-    name = json['name']
-    isOwner = False
+def create_room_with_player(room, user):
+    if room in games.keys():
+        return 'Room id already exists!'
+    if len(games) >= MAX_GAMES:
+        return 'Room quantity exceeded!'
+    games[room] = GameSession(room)
+    games[room].players.append(Player(name, True))
+    return ''
+
+def create_player_in_room(room, user):
     if room not in games.keys():
-        games[room] = GameSession(room)
-        isOwner = True
+        return "Room doesn't exist!"
     for player in games[room].players:
         if player.name == name:
-            return True
-    games[room].players.append(Player(name, isOwner))
-    return False
+            return 'Player name is taken!'
+    games[room].players.append(Player(name, False))
+    return ''
 
 def remove_player(json):
     room = json['room']
@@ -50,10 +65,58 @@ def remove_player(json):
         game.players[0].isOwner = True
     elif len(game.players) == 0:
         games.pop(room)
-        return False
-    return True
 
-def get_players(room):
-    if room in games.keys():
-        return games[room].get_player_array()
-    return []
+def choose_game(json):
+    room = json['room']
+    name = json['name']
+    game = json['game']
+    if room not in games.keys():
+        return "Room doesn't exist!";
+    player = games[room].get_player(name)
+    if player == None:
+        return "Player doesn't exist in room!"
+    if player.isOwner == False:
+        return "Player isn't an owner!"
+    if games[room].gameState != 'lobby':
+        return "Can't choose the game mode while playing!"
+    games[room].gameType = game
+    # TODO: Validate game type
+    return ''
+
+def start_game(json):
+    room = json['room']
+    name = json['name']
+    if room not in games.keys():
+        return "Room doesn't exist!";
+    player = games[room].get_player(name)
+    if player == None:
+        return "Player doesn't exist in room!"
+    if player.isOwner == False:
+        return "Player isn't an owner!"
+    if games[room].gameState != 'lobby':
+        return "Can't start the game while already playing!"
+    games[room].gameState = 'playing'
+    return ''
+
+def get_gamestate(room):
+    if room not in games.keys():
+        return None
+    res = {}
+    res['room'] = room
+    res['gameType'] = games[room].gameType
+    res['gameState'] = games[room].gameState
+    res['players'] = games[room].get_player_array()
+    return res
+
+def get_server_status():
+    result = {}
+    result['maxRooms'] = MAX_GAMES
+    result['rooms'] = []
+    for room in games:
+        entry = {}
+        entry['sessionId'] = room.room
+        entry['userCount'] = len(room.players)
+        result[rooms].append(entry)
+
+def can_create_new_game():
+    return len(games) < MAX_GAMES
