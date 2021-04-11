@@ -15,6 +15,7 @@ class GameSession:
     players: list = field(default_factory=list)
     gameType: str = "bababooi"
     gameState: str = "lobby"
+    gameSpecificState: dict = field(default_factory=dict)
 
     def get_player_array(self):
         player_array = []
@@ -43,7 +44,7 @@ def create_player_in_room(room, user):
     if room not in games.keys():
         return "Room doesn't exist!"
     for player in games[room].players:
-        if player.name == name:
+        if player.name == user:
             return 'Player name is taken!'
     games[room].players.append(Player(name, False))
     return ''
@@ -120,3 +121,6 @@ def get_server_status():
 
 def can_create_new_game():
     return len(games) < MAX_GAMES
+
+def init_game(room):
+    pass

@@ -1,12 +1,9 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 from flask_cors import CORS
-import json
+import json, io, random, string, boto3
+from PIL import Image
 import gamestate
-import boto3
-import io
-import string
-import random
 
 app = Flask(__name__)
 CORS(app)
@@ -26,10 +23,13 @@ def create():
     user = request.args['username']
     room = request.args['sessionId']
 
+    err = ''
     if 'create' not in request.args.keys():
         err = gamestate.create_player_in_room(room, user)
+        print(err)
     else:
         err = gamestate.create_room_with_player(room, user)
+        print(err)
     code = 200 if err == '' else 404
     return app.response_class(response=err, status=code)
 
@@ -85,6 +85,14 @@ def download_images():
     # obj = bucket.Object('asdfasdfadsf')
     # fs = io.StringIO()
     # obj.download_fileobj(fs)
+    # images = [Image.new('L', (256, 256)) for _ in range(4)]
+    # for i, image in enumerate(images):
+    #     image_bytes = io.BytesIO()
+    #     image.save(image_bytes, 'png')
+    #     images[i] = base64.b64encode(image_bytes.getvalue()).decode('ascii')
+
+    # json = requests.post('http://127.0.0.1:5000/predict', json=images)
+    # print(json.content)
 
 if __name__ == '__main__':
     download_images()
