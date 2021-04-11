@@ -220,8 +220,8 @@ def bababooi_end_round2(game):
             for i in range(len(game.players)):
                 score = img_probs[i][game.gameSpecificData['targetClassIdx']]
                 game.players[i].totalScore = int(100.0 * score)
-    except:
-        pass # ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
+    except e:
+        print(e) # ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
     
 def start_game(json):
     room = json['room']
