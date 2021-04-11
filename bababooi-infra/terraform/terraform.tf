@@ -1,3 +1,5 @@
+#Primary declaration of terraform properties
+
 terraform {
   required_providers {
     aws = {

@@ -1,3 +1,5 @@
+#Package and deploy JoinSession function
+
 module "lambda_function" {
     source = "terraform-aws-modules/lambda/aws"
 
@@ -8,11 +10,11 @@ module "lambda_function" {
 
     source_path = [
         {
-            path = "../lambda-source",
+            path = "../joingame-lambda",
             
         },
         {
-            path = "../lambda-source/package"
+            path = "../joingame-lambda/package"
         }
     ]
     store_on_s3 = true
