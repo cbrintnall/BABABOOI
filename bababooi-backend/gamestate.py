@@ -153,13 +153,13 @@ def masked_feud_init_round(game):
                 'revealed' : False
             }
 
-
 def bababooi_init_round(game):
     state = game.gameSpecificData
 
     # Determine the two classes we're competing against eachother
     num_classes = len(bababooi_data['info']['class_names'])
     source_class_index, target_class_index = random.sample(range(num_classes), 2)
+    state['state'] = 'playing'
     state['startingClassIdx'] = source_class_index
     state['targetClassIdx'] = target_class_index
     state['startingClassName'] = bababooi_data['info']['proper_names'][source_class_index]
@@ -167,7 +167,7 @@ def bababooi_init_round(game):
 
     # Choose a random image from our source class to give each player
     startClassName = bababooi_data['info']['class_names'][source_class_index]
-    img_idx = random.randint(len(bababooi_data['img'][startClassName]))
+    img_idx = random.randint(0, len(bababooi_data['img'][startClassName]) - 1)
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
 
     # Set timing information for this round
@@ -178,13 +178,11 @@ def bababooi_init_round(game):
 
     game.gameSpecificData = state
 
-
 def bababooi_start_next_round(game):
     game = games[room]
     if game.gameSpecificData['state'] == 'playing':
         return ''
     game.gameSpecificData['state'] = 'playing'
-    game.gameSpecificData['']
 
 def bababooi_end_round(game):
     game.gameSpecificData['state'] = 'reviewing'
@@ -195,10 +193,11 @@ def bababooi_end_round(game):
         im.resize((256, 256), resample=PIL.Image.NEAREST)
         image_bytes = io.BytesIO()
         image.save(image_bytes, 'png')
-        images.append(base64.b64encode(image_bytes.getvalue()).decude('ascii'))
+        images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
 
     json = request.post('endpt', json=images)
     print(json.content)
+
 
 def start_game(json):
     room = json['room']
@@ -219,7 +218,6 @@ def start_game(json):
 
     result = init_game(room)
     return '' if result is None else result
-
 
 def get_gamestate(room):
     if room not in games.keys():
@@ -276,7 +274,6 @@ def hasRoundExpired(startTimeStr, durationInSecs):
     roundEnd = roundStart + datetime.timedelta(0, durationInSecs)
     return roundEnd <= datetime.now(timezone.utc)
 
-
 def submit_text(json):
     name, room, text = json['name'], json['room'], json['text']
     game = games[room]
@@ -285,8 +282,6 @@ def submit_text(json):
         return handle_masked_feud_submit_text(game, text)
     else:
         return "Current game doesn't support submit text"
-
-
 
 def handle_masked_feud_submit_text(game, text):
     state = game.gameSpecificData
@@ -321,6 +316,14 @@ def handle_masked_feud_submit_text(game, text):
         state['current_player'] = game.players[state['current_player_index']].name
 
     return ''
+
+def is_round_over(room):
+    game = games[room]
+    roundOver = True
+    for player in game.players:
+        if img not in player.gameSpecificData.keys():
+            roundOver = False
+    return roundOver
 
 
 def get_server_status():
