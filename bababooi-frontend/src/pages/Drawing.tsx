@@ -99,9 +99,11 @@ class DrawingGame extends React.Component<
     const { startingClassName, targetClassName } = this.state.gameState!.gameSpecificData;
 
     return (
-      <h3 style={{paddingLeft: '12px'}}>
-        ok, heres a <u className="aesthetic-green-color">{startingClassName}</u>, make it think it's a <u className="aesthetic-arizona-pink-color">{targetClassName}</u>
-      </h3>
+      <div>
+        <h3 style={{paddingLeft: '12px'}}>
+          ok, heres a <u className="aesthetic-green-color">{startingClassName}</u>, make it think it's a <u className="aesthetic-arizona-pink-color">{targetClassName}</u>
+        </h3>
+      </div>
     )
   }
 
@@ -258,58 +260,68 @@ class DrawingGame extends React.Component<
               </div> */}
             </div>
             <hr />
-            <div style={{ display: "flex", flexDirection: "row" }}>
-              <div className="aesthetic-windows-95-container-indent">
-                <span className="aesthetic-arizona-pink-color"> PLAYERS: </span>
-                <ul>
-                  {this.state.gameState?.players &&
-                    this.state.gameState.players.map((player) => {
-                      return (
-                        <li>
-                          {player.name} {player.isOwner ? cfg.ownerTag : ""}
-                        </li>
-                      );
-                    })}
-                </ul>
+            <div style={{display: 'flex', flexDirection: 'column'}}>
+              <div style={{ display: "flex", flexDirection: "row" }}>
+                <div className="aesthetic-windows-95-container-indent" style={{width: '175px'}}>
+                  <span className="aesthetic-arizona-pink-color"> PLAYERS: </span>
+                  <ul>
+                    {this.state.gameState?.players &&
+                      this.state.gameState.players.map((player) => {
+                        return (
+                          <li>
+                            {player.name} <span className="aesthetic-pepsi-red-color"> {player.isOwner ? cfg.ownerTag : ""} </span>
+                            <ul>
+                              <li> Score: <b>{(player as any).totalScore}</b> </li>
+                            </ul>
+                          </li>
+                        );
+                      })}
+                  </ul>
+                </div>
+                <div
+                  ref={this.drawDivParent}
+                  className="aesthetic-windows-95-container-indent"
+                  style={{
+                    marginLeft: "4px",
+                    width: "100%",
+                    display: "flex",
+                    justifyContent: "center",
+                  }}
+                >
+                  <div style={{ width: "100%" }}>
+                    <h2 style={{ paddingLeft: "24px", color: "black" }}>
+                      { `ROOM ID: "${this.state.gameState?.room}" <== send to your 🌈f r i e n d s🌈` }
+                    </h2>
+                    <h4 className="aesthetic-green-color"> how to plaaay: </h4>
+                    <ol>
+                      <li> view base image </li>
+                      <li> acknowledge what it is (ex: <u className="aesthetic-arizona-pink-color">cat</u>) </li>
+                      <li> acknowledge what you're supposed to draw (ex: <u className="aesthetic-arizona-blue-color">dog</u>) </li>
+                      <li> draw over <u className="aesthetic-arizona-pink-color">cat</u> and try to make the Ą͝Į̕ think it's <u className="aesthetic-arizona-blue-color">dog</u> </li>
+                      <li> a̭͈̰̬d̗͕̞̗̩͢ḓ̢̘̟̣r̸̺̬͚̩̪̬̪e͚̹͎̤͟s̢͏̼̗͍s͙̫͢͡ ̛̯̟̜̭͎͠y̡͈̬̟͓ͅͅọ̕u͇̻̫̰̫͉r҉͚̞͕̝̭͇̭̻ ̢̖͔̣͕̗̪͝͠i̻̮͇̥n̤̬͇̲̺̝̻͔͜n̡͏̳e̹̮̱̫̱̼͜r̷̲̺͇̜͈̬̭ ̰̬̘͓̕f̛͍̺̕è͉̪̫͉̺̜a̯̟͈͖̻̫̱͡ṛ͉̫̤̼̰̘ͅs҉͇̻̬̗͞ </li>
+                      <li> win! </li>
+                    </ol>
+                    <h4 className="aesthetic-pink-color"> R U L E S: </h4>
+                    <ol>
+                      <li> you cannot erase, get it right the first time </li>
+                    </ol>
+                  </div>
+                  <Drawer
+                    height={this.state.drawHeight}
+                    width={this.state.drawWidth}
+                  />
+                  <div style={{ width: "100%" }}>
+                    {
+                      this.state.gameState?.gameState === "playing" &&
+                      this.getRoundInfoComponents()
+                    }
+                  </div>
+                </div>
               </div>
-              <div
-                ref={this.drawDivParent}
-                className="aesthetic-windows-95-container-indent"
-                style={{
-                  marginLeft: "4px",
-                  width: "100%",
-                  display: "flex",
-                  justifyContent: "center",
-                }}
-              >
-                <div style={{ width: "100%" }}>
-                  <h2 style={{ paddingLeft: "24px", color: "black" }}>
-                    { `ROOM ID: "${this.state.gameState?.room}" <== send to your 🌈f r i e n d s🌈` }
-                  </h2>
-                  <h4 className="aesthetic-green-color"> how to plaaay: </h4>
-                  <ol>
-                    <li> view base image </li>
-                    <li> acknowledge what it is (ex: <u className="aesthetic-arizona-pink-color">cat</u>) </li>
-                    <li> acknowledge what you're supposed to draw (ex: <u className="aesthetic-arizona-blue-color">dog</u>) </li>
-                    <li> draw over <u className="aesthetic-arizona-pink-color">cat</u> and try to make the Ą͝Į̕ think it's <u className="aesthetic-arizona-blue-color">dog</u> </li>
-                    <li> a̭͈̰̬d̗͕̞̗̩͢ḓ̢̘̟̣r̸̺̬͚̩̪̬̪e͚̹͎̤͟s̢͏̼̗͍s͙̫͢͡ ̛̯̟̜̭͎͠y̡͈̬̟͓ͅͅọ̕u͇̻̫̰̫͉r҉͚̞͕̝̭͇̭̻ ̢̖͔̣͕̗̪͝͠i̻̮͇̥n̤̬͇̲̺̝̻͔͜n̡͏̳e̹̮̱̫̱̼͜r̷̲̺͇̜͈̬̭ ̰̬̘͓̕f̛͍̺̕è͉̪̫͉̺̜a̯̟͈͖̻̫̱͡ṛ͉̫̤̼̰̘ͅs҉͇̻̬̗͞ </li>
-                    <li> win! </li>
-                  </ol>
-                  <h4 className="aesthetic-pink-color"> R U L E S: </h4>
-                  <ol>
-                    <li> you cannot erase, get it right the first time </li>
-                  </ol>
-                </div>
-                <Drawer
-                  height={this.state.drawHeight}
-                  width={this.state.drawWidth}
-                />
-                <div style={{ width: "100%" }}>
-                  {
-                    this.state.gameState?.gameState === "playing" &&
-                    this.getRoundInfoComponents()
-                  }
-                </div>
+              <div className="aesthetic-windows-95-container-indent">
+                {
+                  
+                }
               </div>
             </div>
           </div>
