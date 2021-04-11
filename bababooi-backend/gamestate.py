@@ -1,11 +1,16 @@
+
+import io
 import math
-import random
+import random, base64
 import requests
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from PIL import Image
 
 MAX_GAMES = 10
+START_DELAY_IN_SECS = 3
+ROUND_LEN_IN_SECS = 30
 
 @dataclass
 class Player:
@@ -13,8 +18,13 @@ class Player:
     isOwner: bool = False
     gameScore: int = 0
     totalScore: int = 0
+    gameSpecificData: dict = field(default_factory=dict)
     def to_dict(self):
-        return {"name": self.name, "isOwner": self.isOwner}
+        return {"name": self.name,
+            "isOwner": self.isOwner,
+            "gameScore": self.gameScore,
+            "totalScore": self.totalScore,
+            "gameSpecificData": self.gameSpecificData}
 
 @dataclass
 class GameSession:
@@ -41,6 +51,7 @@ class GameSession:
     def reset(self):
         for p in self.players:
             p.gameScore = 0
+            p.gameSpecificData = {}
         self.gameSpecificData = {}
         self.roundNo = 0
         self.gameState = "lobby"
@@ -106,7 +117,9 @@ def init_game(room):
         return "Room doesn't exist!"
     game = games[room]
     mode = game.gameType
-
+    game.gameSpecificData = {}
+    for player in game.players:
+        player.gameSpecificData = {}
     if mode == 'bababooi':
         game.roundLimit = 3
         bababooi_init_round(game)
@@ -142,7 +155,7 @@ def masked_feud_init_round(game):
 
 
 def bababooi_init_round(game):
-    state = game.gameSpecificData
+    state = {}
     num_classes = len(bababooi_data['info']['class_names'])
     classes = random.sample(range(0, num_classes), 2)
     startClassName = bababooi_data['info']['class_names'][classes[0]]
@@ -153,9 +166,31 @@ def bababooi_init_round(game):
     state['targetClassName'] = bababooi_data['info']['proper_names'][classes[1]]
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
     state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
+    state['startDelayInSecs'] = START_DELAY_IN_SECS
+    state['roundLengthInSecs'] = ROUND_LEN_IN_SECS
+    state['state'] = 'playing'
+    game.gameSpecificData = state
 
-def bababooi_score_round(game):
-    pass
+def bababooi_start_next_round(game):
+    game = games[room]
+    if game.gameSpecificData['state'] == 'playing':
+        return ''
+    game.gameSpecificData['state'] = 'playing'
+    game.gameSpecificData['']
+
+def bababooi_end_round(game):
+    game.gameSpecificData['state'] = 'reviewing'
+    # TODO: Collect images, fire off ML thingy
+    images = []
+    for player in game.players:
+        im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
+        im.resize((256, 256), resample=PIL.Image.NEAREST)
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, 'png')
+        images.append(base64.b64encode(image_bytes.getvalue()).decude('ascii'))
+
+    json = request.post('endpt', json=images)
+    print(json.content)
 
 def start_game(json):
     room = json['room']
@@ -173,6 +208,7 @@ def start_game(json):
     for player in games[room].players:
         player.gameScore = 0
     games[room].gameState = 'playing'
+
     result = init_game(room)
     return '' if result is None else result
 
@@ -186,6 +222,8 @@ def get_gamestate(room):
     res['gameType'] = game.gameType
     res['gameState'] = game.gameState
     res['gameSpecificData'] = game.gameSpecificData
+    res['roundNo'] = game.roundNo
+    res['roundLimit'] = game.roundLimit
     res['players'] = game.get_player_array()
     return res
 
@@ -194,6 +232,32 @@ def submit_image(json):
     name = json['name']
     img = json['data'] # TODO: decode img
     game = games[room]
+    if game.gameType != 'bababooi':
+        return 'Wrong game type for submit_image'
+    if game.gameState != 'playing':
+        return 'Can\'t submit an image in lobby'
+    if game.gameSpecificData['state'] != 'playing':
+        return "Can't submit an image after round is over"
+    player = game.get_player(name)
+    # Determine if player is final player
+    lastPlayer = True
+    for p in game.players:
+        if 'img' not in p.gameSpecificData.keys():
+            lastPlayer = False
+            break
+    if hasRoundExpired(game.gameSpecificData['startingTime'], ROUND_LEN_IN_SECS + START_DELAY_IN_SECS):
+        lastPlayer = True
+    if 'img' in player.gameSpecificData.keys():
+        return "Can't submit an image twice in a round!"
+    player.gameSpecificData['img'] = img
+    if lastPlayer:
+        bababooi_end_round(game)
+    return ''
+
+def hasRoundExpired(startTimeStr, durationInSecs):
+    roundStart = datetime.fromisoformat(startTimeStr.replace("Z", "+00:00"))
+    roundEnd = roundStart + datetime.timedelta(0, durationInSecs)
+    return roundEnd <= datetime.now(timezone.utc)
 
 
 def submit_text(json):

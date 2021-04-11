@@ -1,23 +1,21 @@
 import boto3
 from boto3.dynamodb.conditions import Key
 
-import code
+import random, os
 
 ddb = boto3.resource('dynamodb')
 
-table = ddb.Table('ActiveHosts')
+table = ddb.Table(os.environ['DDB_HOST_TABLE'])
 
 scan_kwargs = {
-    'FilterExpression': Key('currentCapacity').gt(0),
-    'ProjectionExpression':'currentCapacity, hostname, serverID'
+    'ProjectionExpression':'hostname'
 }
 
 response = table.scan(**scan_kwargs)
-items = response['Items']
-if len(items) == 0:
-    print('uh oh')
+servers = response['Items']
+random.shuffle(servers)
 
-print(sorted(items, reverse=True, key=lambda k: k['currentCapacity'])[0])
+print(servers)
 
 
 

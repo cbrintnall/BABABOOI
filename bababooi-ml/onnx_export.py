@@ -10,7 +10,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='Process some integers.')
     parser.add_argument('-c', '--checkpoint', help='Path to a model checkpoint.')
     parser.add_argument('-o', '--out', default='model.onnx', help='ONNX write path')
-    parser.add_argument('-t', '--type', choices=['dummy', 'quickdraw'], default='dummy',
+    parser.add_argument('-t', '--type', choices=['dummy', 'quickdraw', 'nlpfeud'], default='dummy',
                         help='Type of model to export.')
     return parser.parse_args()
 
@@ -20,6 +20,8 @@ def main(args):
         model = DummyModel.load_from_checkpoint(args.checkpoint)
     elif args.type == 'quickdraw':
         model = QuickDraw.load_from_checkpoint(args.checkpoint)
+    elif args.type == 'nlpfeud':
+        raise ValueError(f'Use hf_convert_graph_to_onnx.py to convert nlpfeud model to onnx.')
     else:
         raise ValueError(f'Model type {args.type} not supported.')
 
