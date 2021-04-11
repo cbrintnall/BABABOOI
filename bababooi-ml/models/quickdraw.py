@@ -1,5 +1,4 @@
 
-import os
 import torch
 import torch.nn as nn
 import torchvision.models as models
@@ -8,8 +7,8 @@ from data import QuickDrawDataset
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
-class QuickDrawClassifier(pl.LightningModule):
 
+class QuickDraw(pl.LightningModule):
     def __init__(self):
         super().__init__()
         self.encoder = models.resnet18()
@@ -18,7 +17,6 @@ class QuickDrawClassifier(pl.LightningModule):
         self.encoder.fc = nn.Linear(512, 345, bias=True)
 
         self.loss_func = nn.CrossEntropyLoss()
-
 
     def forward(self, x):
         return self.encoder(x)
@@ -45,16 +43,16 @@ class QuickDrawClassifier(pl.LightningModule):
         num_seen = pred.shape[0]
 
         return {
-            'loss' : loss.item(),
-            'num_correct' : num_correct.item(),
-            'num_seen' : num_seen
+            'loss': loss.item(),
+            'num_correct': num_correct.item(),
+            'num_seen': num_seen
         }
 
     def validation_epoch_end(self, validation_step_outputs):
         result = {
-            'loss' : 0,
-            'num_correct' : 0,
-            'num_seen' : 0
+            'loss': 0,
+            'num_correct': 0,
+            'num_seen': 0
         }
 
         for part in validation_step_outputs:
@@ -85,17 +83,15 @@ class QuickDrawClassifier(pl.LightningModule):
 
 
 def main():
-    model = QuickDrawClassifier()
+    model = QuickDraw()
     logger = pl.loggers.WandbLogger(project='quickdraw', entity='ayalaa2')
     trainer = pl.Trainer(
         logger=logger, gpus=4, num_nodes=1, accelerator='ddp',
         max_steps=None, precision=16, val_check_interval=2500
     )
     trainer.fit(model)
-
     trainer.save_checkpoint('quickdraw_model.pt')
 
 
 if __name__ == '__main__':
     main()
-
