@@ -200,12 +200,12 @@ def bababooi_end_round(game):
 
 def bababooi_end_round2(game):
     game.gameState = 'lobby'
-    # TODO: Collect images, fire off ML thingy
     images = []
     for i in range(len(game.players)):
         player = game.players[i]
         im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
-        im.resize((256, 256), resample=PIL.Image.NEAREST)
+        im = im.resize((256, 256), resample=PIL.Image.NEAREST)
+        im = im.convert(mode="L")
         image_bytes = io.BytesIO()
         image.save(image_bytes, 'png')
         images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
@@ -216,8 +216,6 @@ def bababooi_end_round2(game):
         score = probs[i][game.gameSpecificData['targetClassIdx']]
         game.players[i].totalScore = int(100.0 * score)
     
-    # Calculate scores
-
 def start_game(json):
     room = json['room']
     name = json['name']
