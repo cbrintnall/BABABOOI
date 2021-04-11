@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 import random, base64
 from datetime import datetime, timezone
+from PIL import Image
 
 MAX_GAMES = 10
 ROUND_LEN_IN_SECS = 30
@@ -9,11 +10,15 @@ ROUND_LEN_IN_SECS = 30
 class Player:
     name: str
     isOwner: bool = False
-    roundScore: int = 0
+    gameScore: int = 0
     totalScore: int = 0
     gameSpecificData: dict = field(default_factory=dict)
     def to_dict(self):
-        return {"name": self.name, "isOwner": self.isOwner}
+        return {"name": self.name,
+            "isOwner": self.isOwner,
+            "gameScore": self.gameScore,
+            "totalScore": self.totalScore,
+            "gameSpecificData": self.gameSpecificData}
 
 @dataclass
 class GameSession:
@@ -123,6 +128,10 @@ def bababooi_init_round(game):
 def bababooi_end_round(game):
     game.gameSpecificData['state'] = 'reviewing'
     # TODO: Collect images, fire off ML thingy
+    images = []
+    for player in game.players:
+        images.append(player.gameSpecificData['img'])
+
 
 def start_game(json):
     room = json['room']
@@ -138,7 +147,7 @@ def start_game(json):
         return "Can't start the game while already playing!"
     # Clear player prev round scores
     for player in games[room].players:
-        player.roundScore = 0
+        player.gameScore = 0
     games[room].gameState = 'playing'
     games[room].roundNo = 0
     init_game(room)
