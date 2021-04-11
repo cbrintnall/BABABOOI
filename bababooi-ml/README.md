@@ -27,11 +27,11 @@ for i, image in enumerate(images):
     image.save(image_bytes, 'png')
     images[i] = base64.b64encode(image_bytes.getvalue()).decode('ascii')
 
-json = requests.post('http://127.0.0.1:5000/quickdraw', json=images)
-print(json.content)
+response = requests.post('http://127.0.0.1:5000/quickdraw', json=images)
+print(response.json())
 
 # NLP Feud Text
 text = 'I love driving my [MASK] to work!'
 json = requests.post('http://127.0.0.1:5000/nlpfeud', json=text)
-print(json.content)
+print(response.json())
 ```
