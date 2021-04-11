@@ -6,9 +6,7 @@ from Core import logger, ddb
 from HostInteraction import query_hosts, find_host, join_session
 
 def register_new_game(gameId, session_hostname):
-    session_table = ddb.Table(Core.DDB_GAME_SESSION_TABLE)
-
-    session_table.put_item(
+    Core.session_table.put_item(
         Item={
             'GameSessionId':gameId,
             'hostname': session_hostname
@@ -56,9 +54,8 @@ def lambda_handler(event, context):
             }
 
         # query DDB to find game session host
-        session_table = ddb.Table(Core.DDB_GAME_SESSION_TABLE)
 
-        get_session_resp = session_table.get_item(
+        get_session_resp = Core.session_table.get_item(
             Key={'GameSessionId':gameId}
         )
 
@@ -106,4 +103,4 @@ def lambda_handler(event, context):
     
 
 
-print(lambda_handler({'userId':'test3', 'gameId':'GXOXBG'}, None))
+print(lambda_handler({'userId':'test3'}, None))
