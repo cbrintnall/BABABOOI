@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 from flask_cors import CORS
-import json, io, random, string, boto3
+import json, io, random, string, boto3, os
 from PIL import Image
 import gamestate
 
@@ -18,16 +18,18 @@ def status():
 
 @app.route('/create', methods=['POST'])
 def create():
-    if 'username' not in request.args.keys() or 'sessionId' not in request.args.keys():
-        return app.response_class(response="Missing param", status=404)
+    print(request.args)
+    if 'username' not in request.args or 'sessionId' not in request.args:
+        return app.response_class(response="Missing param", status=400)
     user = request.args['username']
     room = request.args['sessionId']
-
-    if 'create' not in request.args.keys():
+    
+    if 'create' not in request.args:
         err = gamestate.create_player_in_room(room, user)
     else:
         err = gamestate.create_room_with_player(room, user)
-    code = 200 if err == '' else 404
+    print(err)
+    code = 200 if err == '' else 400
     return app.response_class(response=err, status=code)
 
 def broadcast_gamestate(room):
@@ -74,14 +76,39 @@ def submit_image(data):
 
 @socketio.on('submit_text')
 def submit_text(data):
-    pass
+    packet = json.loads(data)
+    err = gamestate.submit_image(json)
+    if err != '':
+        emit('error', err)
+        return
+    broadcast_gamestate(packet['room'])
 
-def download_images():
+def preload():
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('bababooi')
-    # obj = bucket.Object('asdfasdfadsf')
-    # fs = io.StringIO()
-    # obj.download_fileobj(fs)
+
+    # Load bababooi data
+
+    # TODO: Remove this cache for prod
+    if not os.path.isfile('cached_bababooi.txt'):
+        info = bucket.Object('games/adv_draw/info.json')
+        gamestate.bababooi_data['info'] = json.loads(info.get()['Body'].read())
+        gamestate.bababooi_data['img'] = {}
+        for class_name in gamestate.bababooi_data['info']['class_names']:
+            filename = 'games/adv_draw/' + class_name + '.ndjson'
+            imgs = bucket.Object(filename)
+            gamestate.bababooi_data['img'][class_name] = []
+            imgFileStr = imgs.get()['Body'].read()
+            for line in imgFileStr.splitlines():
+                gamestate.bababooi_data['img'][class_name].append(json.loads(line))
+        with open('cached_bababooi.txt', 'w') as fp:
+            fp.write(json.dumps(gamestate.bababooi_data))
+    else:
+        with open('cached_bababooi.txt', 'r') as fp:
+            gamestate.bababooi_data = json.loads(fp.read())
+    # print(gamestate.bababooi_data['info'])
+    # print(gamestate.bababooi_data['img']['tennis_racquet'])
+
     # images = [Image.new('L', (256, 256)) for _ in range(4)]
     # for i, image in enumerate(images):
     #     image_bytes = io.BytesIO()
@@ -92,5 +119,5 @@ def download_images():
     # print(json.content)
 
 if __name__ == '__main__':
-    download_images()
+    preload()
     socketio.run(app)

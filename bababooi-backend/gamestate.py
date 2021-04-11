@@ -1,4 +1,6 @@
 from dataclasses import dataclass, field
+import random
+from datetime import datetime, timezone
 
 MAX_GAMES = 10
 
@@ -6,6 +8,8 @@ MAX_GAMES = 10
 class Player:
     name: str
     isOwner: bool = False
+    roundScore: int = 0
+    totalScore: int = 0
     def to_dict(self):
         return {"name": self.name, "isOwner": self.isOwner}
 
@@ -15,7 +19,9 @@ class GameSession:
     players: list = field(default_factory=list)
     gameType: str = "bababooi"
     gameState: str = "lobby"
-    gameSpecificState: dict = field(default_factory=dict)
+    gameSpecificData: dict = field(default_factory=dict)
+    roundNo: int = 0
+    roundLimit: int = 3 # can be changed per-game
 
     def get_player_array(self):
         player_array = []
@@ -30,6 +36,8 @@ class GameSession:
         return None
 
 games = {}
+
+bababooi_data = {}
 
 def create_room_with_player(room, user):
     if room in games.keys():
@@ -71,7 +79,7 @@ def choose_game(json):
     name = json['name']
     game = json['game']
     if room not in games.keys():
-        return "Room doesn't exist!";
+        return "Room doesn't exist!"
     player = games[room].get_player(name)
     if player == None:
         return "Player doesn't exist in room!"
@@ -83,11 +91,37 @@ def choose_game(json):
     # TODO: Validate game type
     return ''
 
+def init_game(room):
+    if room not in games.keys():
+        return "Room doesn't exist!"
+    game = games[room]
+    mode = game.gameType
+    game.gameSpecificData = {}
+    if mode == 'bababooi':
+        game.roundLimit = 3
+        bababooi_init_round(game)
+
+def bababooi_init_round(game):
+    state = game.gameSpecificData
+    num_classes = len(bababooi_data['info']['class_names'])
+    classes = random.sample(range(0, num_classes), 2)
+    startClassName = bababooi_data['info']['class_names'][classes[0]]
+    img_idx = random.randint(0, len(bababooi_data['img'][startClassName]))
+    state['startingClassIdx'] = classes[0]
+    state['targetClassIdx'] = classes[1]
+    state['startingClassName'] = bababooi_data['info']['proper_names'][classes[0]]
+    state['targetClassName'] = bababooi_data['info']['proper_names'][classes[1]]
+    state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
+    state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
+
+def bababooi_score_round(game):
+    pass
+
 def start_game(json):
     room = json['room']
     name = json['name']
     if room not in games.keys():
-        return "Room doesn't exist!";
+        return "Room doesn't exist!"
     player = games[room].get_player(name)
     if player == None:
         return "Player doesn't exist in room!"
@@ -95,18 +129,30 @@ def start_game(json):
         return "Player isn't an owner!"
     if games[room].gameState != 'lobby':
         return "Can't start the game while already playing!"
+    # Clear player prev round scores
+    for player in games[room].players:
+        player.roundScore = 0
     games[room].gameState = 'playing'
+    init_game(room)
     return ''
 
 def get_gamestate(room):
     if room not in games.keys():
         return None
     res = {}
+    game = games[room]
     res['room'] = room
-    res['gameType'] = games[room].gameType
-    res['gameState'] = games[room].gameState
-    res['players'] = games[room].get_player_array()
+    res['gameType'] = game.gameType
+    res['gameState'] = game.gameState
+    res['gameSpecificData'] = game.gameSpecificData
+    res['players'] = game.get_player_array()
     return res
+
+def submit_image(json):
+    room = json['room']
+    name = json['name']
+    img = json['data'] # TODO: decode img
+    game = games[room]
 
 def get_server_status():
     result = {}
@@ -121,6 +167,3 @@ def get_server_status():
 
 def can_create_new_game():
     return len(games) < MAX_GAMES
-
-def init_game(room):
-    pass
