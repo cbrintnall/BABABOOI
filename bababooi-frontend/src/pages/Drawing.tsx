@@ -54,8 +54,8 @@ class DrawingGame extends React.Component<
     super(props);
 
     this.state = {
-      drawWidth: 500,
-      drawHeight: 500,
+      drawWidth: 512,
+      drawHeight: 512,
     };
 
     this.drawDivParent = createRef<HTMLDivElement>();
