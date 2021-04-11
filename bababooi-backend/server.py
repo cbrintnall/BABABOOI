@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
+from flask_cors import CORS
 import json
 import gamestate
 import boto3
@@ -8,31 +9,29 @@ import string
 import random
 
 app = Flask(__name__)
+CORS(app)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, cors_allowed_origins="*")
 
-@app.route('/status')
+@app.route('/status', methods=['GET'])
 def status():
     status = gamestate.get_server_status()
-    response = app.response_class(
-        response=json.dumps(status),
-        status=200)
+    st = json.dumps(status)
+    return app.response_class(response=st, status=200)
 
-@app.route('/create')
+@app.route('/create', methods=['POST'])
 def create():
-    if request.method == 'POST':
-        if 'username' not in request.args.keys() or 'sessionId' not in request.args.keys():
-            return app.response_class("Missing param", 404)
-        user = request.args['username']
-        room = request.args['sessionId']
+    if 'username' not in request.args.keys() or 'sessionId' not in request.args.keys():
+        return app.response_class(response="Missing param", status=404)
+    user = request.args['username']
+    room = request.args['sessionId']
 
-        if 'create' not in request.args.keys():
-            err = gamestate.create_player_in_room(room, user)
-        else:
-            err = gamestate.create_room_with_player(room, user)
-        code = 200 if err == '' else 404
-        broadcast_gamestate(room)
-        return app.response_class(err, code)
+    if 'create' not in request.args.keys():
+        err = gamestate.create_player_in_room(room, user)
+    else:
+        err = gamestate.create_room_with_player(room, user)
+    code = 200 if err == '' else 404
+    return app.response_class(response=err, status=code)
 
 def broadcast_gamestate(room):
     st = gamestate.get_gamestate(room)
@@ -41,15 +40,11 @@ def broadcast_gamestate(room):
     msg = json.dumps(st)
     emit('gamestate', msg, to=room)
 
-# @socketio.on('join_game')
-# def join_game(data):
-#     packet = json.loads(data)
-#     error = gamestate.add_player(packet)
-#     if error != '':
-#         emit('error', error)
-#         return
-#     join_room(packet['room'])
-#     broadcast_gamestate(packet['room'])
+@socketio.on('handshake')
+def handshake(data):
+    packet = json.loads(data)
+    join_loop(packet['room'])
+    broadcast_gamestate(packet['room'])
 
 @socketio.on('leave_game')
 def leave_game(data):
@@ -57,7 +52,6 @@ def leave_game(data):
     gamestate.remove_player(packet)
     leave_room(packet['room'])
     broadcast_gamestate(packet['room'])
-
 
 @socketio.on('choose_game')
 def choose_game(data):
