@@ -72,7 +72,8 @@ def start_game(data):
 
 @socketio.on('submit_image')
 def submit_image(data):
-    pass
+    packet = json.loads(data)
+    gamestate.submit_image(packet)
 
 @socketio.on('submit_text')
 def submit_text(data):

@@ -1,8 +1,9 @@
 from dataclasses import dataclass, field
-import random
+import random, base64
 from datetime import datetime, timezone
 
 MAX_GAMES = 10
+ROUND_LEN_IN_SECS = 30
 
 @dataclass
 class Player:
@@ -10,6 +11,7 @@ class Player:
     isOwner: bool = False
     roundScore: int = 0
     totalScore: int = 0
+    gameSpecificData: dict = field(default_factory=dict)
     def to_dict(self):
         return {"name": self.name, "isOwner": self.isOwner}
 
@@ -97,6 +99,8 @@ def init_game(room):
     game = games[room]
     mode = game.gameType
     game.gameSpecificData = {}
+    for player in game.players:
+        player.gameSpecificData = {}
     if mode == 'bababooi':
         game.roundLimit = 3
         bababooi_init_round(game)
@@ -113,9 +117,11 @@ def bababooi_init_round(game):
     state['targetClassName'] = bababooi_data['info']['proper_names'][classes[1]]
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
     state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
+    state['state'] = 'playing'
 
-def bababooi_score_round(game):
-    pass
+def bababooi_end_round(game):
+    game.gameSpecificData['state'] = 'reviewing'
+    # TODO: Collect images, fire off ML thingy
 
 def start_game(json):
     room = json['room']
@@ -133,6 +139,7 @@ def start_game(json):
     for player in games[room].players:
         player.roundScore = 0
     games[room].gameState = 'playing'
+    games[room].roundNo = 0
     init_game(room)
     return ''
 
@@ -145,6 +152,8 @@ def get_gamestate(room):
     res['gameType'] = game.gameType
     res['gameState'] = game.gameState
     res['gameSpecificData'] = game.gameSpecificData
+    res['roundNo'] = game.roundNo
+    res['roundLimit'] = game.roundLimit
     res['players'] = game.get_player_array()
     return res
 
@@ -153,6 +162,32 @@ def submit_image(json):
     name = json['name']
     img = json['data'] # TODO: decode img
     game = games[room]
+    if game.gameType != 'bababooi':
+        return 'Wrong game type for submit_image'
+    if game.gameState != 'playing':
+        return 'Can\'t submit an image in lobby'
+    if game.gameSpecificData['state'] != 'playing':
+        return "Can't submit an image after round is over"
+    player = game.get_player(name)
+    # Determine if player is final player
+    lastPlayer = True
+    for p in game.players:
+        if 'img' not in p.gameSpecificData.keys():
+            lastPlayer = False
+            break
+    if hasRoundExpired(game.gameSpecificData['startingTime'], ROUND_LEN_IN_SECS):
+        lastPlayer = True
+    if 'img' in player.gameSpecificData.keys():
+        return "Can't submit an image twice in a round!"
+    player.gameSpecificData['img'] = img
+    if lastPlayer:
+        bababooi_end_round(game)
+    return ''
+
+def hasRoundExpired(startTimeStr, durationInSecs):
+    roundStart = datetime.fromisoformat(startTimeStr.replace("Z", "+00:00"))
+    roundEnd = roundStart + datetime.timedelta(0, durationInSecs + 1)
+    return roundEnd <= datetime.now(timezone.utc)
 
 def get_server_status():
     result = {}
