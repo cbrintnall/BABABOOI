@@ -9,6 +9,7 @@ Flask-SocketIO = "==5.0.1"
 pillow = "*"
 boto3 = "*"
 flask-cors = "*"
+requests = "*"
 
 [dev-packages]
 

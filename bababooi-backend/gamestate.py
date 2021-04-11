@@ -2,8 +2,12 @@ from dataclasses import dataclass, field
 import random, base64
 from datetime import datetime, timezone
 from PIL import Image
+import io
+import base64
+import requests
 
 MAX_GAMES = 10
+START_DELAY_IN_SECS = 3
 ROUND_LEN_IN_SECS = 30
 
 @dataclass
@@ -122,16 +126,31 @@ def bababooi_init_round(game):
     state['targetClassName'] = bababooi_data['info']['proper_names'][classes[1]]
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
     state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
+    state['startDelayInSecs'] = START_DELAY_IN_SECS
+    state['roundLengthInSecs'] = ROUND_LEN_IN_SECS
     state['state'] = 'playing'
     game.gameSpecificData = state
+
+def bababooi_start_next_round(game):
+    game = games[room]
+    if game.gameSpecificData['state'] == 'playing':
+        return ''
+    game.gameSpecificData['state'] = 'playing'
+    game.gameSpecificData['']
 
 def bababooi_end_round(game):
     game.gameSpecificData['state'] = 'reviewing'
     # TODO: Collect images, fire off ML thingy
     images = []
     for player in game.players:
-        images.append(player.gameSpecificData['img'])
+        im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
+        im.resize((256, 256), resample=PIL.Image.NEAREST)
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, 'png')
+        images.append(base64.b64encode(image_bytes.getvalue()).decude('ascii'))
 
+    json = request.post('endpt', json=images)
+    print(json.content)
 
 def start_game(json):
     room = json['room']
@@ -185,7 +204,7 @@ def submit_image(json):
         if 'img' not in p.gameSpecificData.keys():
             lastPlayer = False
             break
-    if hasRoundExpired(game.gameSpecificData['startingTime'], ROUND_LEN_IN_SECS):
+    if hasRoundExpired(game.gameSpecificData['startingTime'], ROUND_LEN_IN_SECS + START_DELAY_IN_SECS):
         lastPlayer = True
     if 'img' in player.gameSpecificData.keys():
         return "Can't submit an image twice in a round!"
@@ -196,7 +215,7 @@ def submit_image(json):
 
 def hasRoundExpired(startTimeStr, durationInSecs):
     roundStart = datetime.fromisoformat(startTimeStr.replace("Z", "+00:00"))
-    roundEnd = roundStart + datetime.timedelta(0, durationInSecs + 1)
+    roundEnd = roundStart + datetime.timedelta(0, durationInSecs)
     return roundEnd <= datetime.now(timezone.utc)
 
 def get_server_status():

@@ -106,6 +106,11 @@ def start_game(data):
         return
     broadcast_gamestate(packet['room'])
 
+@socketio.on('start_next_round')
+def start_next_round(data):
+    packet = json.loads(data)
+    gamestate.bababooi_start_next_round(packet)
+
 @socketio.on('submit_image')
 def submit_image(data):
     packet = json.loads(data)
