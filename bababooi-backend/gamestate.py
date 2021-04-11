@@ -218,7 +218,7 @@ def bababooi_end_round2(game):
         img_probs = response.json()
         if img_probs:
             for i in range(len(game.players)):
-                score = img_probs[i][game.gameSpecificData['targetClassIdx']]
+                score = img_probs["probs"][i][game.gameSpecificData['targetClassIdx']]
                 game.players[i].totalScore = int(100.0 * score)
     except Exception as e:
         print(e) # ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
