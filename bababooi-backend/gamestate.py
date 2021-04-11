@@ -209,7 +209,7 @@ def bababooi_end_round2(game):
         im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
         im.resize((256, 256), resample=Image.NEAREST)
         image_bytes = io.BytesIO()
-        image.save(image_bytes, 'png')
+        im.save(image_bytes, 'png')
         images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
 
     response = request.post('http://localhost:5000/quickdraw', json=images)
