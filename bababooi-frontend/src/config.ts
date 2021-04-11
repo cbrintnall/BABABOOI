@@ -21,7 +21,7 @@ interface CommonConfig {
 const common: CommonConfig = {
   backgroundColor: "#000000",
   drawColor: "#FFFFFF",
-  lineWidth: 10,
+  lineWidth: 2,
   firstBootTime: 10 * 1000, // 5 seconds
   regularBootTime: 3 * 1000, // 1 second
   bootTimeKey: "CACHED_BOOT_TIME",
