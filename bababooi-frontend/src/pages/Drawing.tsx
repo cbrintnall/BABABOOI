@@ -5,7 +5,7 @@ import { io } from "socket.io-client";
 import { Socket } from "socket.io";
 import { Drawer } from "../Drawing";
 import cfg from "../config";
-import { newDisplayImageSubject, newImageSubmissionSubject, newImageSubmittedSubject } from "../events";
+import { eraseCanvasSubject, newDisplayImageSubject, newImageSubmissionSubject, newImageSubmittedSubject } from "../events";
 import { getUsername } from "../App";
 
 type GameUrlParams = {
@@ -54,11 +54,21 @@ class DrawingGame extends React.Component<
     super(props);
 
     this.state = {
-      drawWidth: 500,
-      drawHeight: 500,
+      drawWidth: 512,
+      drawHeight: 512,
     };
 
     this.drawDivParent = createRef<HTMLDivElement>();
+  }
+
+  isOwner(): boolean {
+    const idx = this.state.gameState?.players?.filter(plr => plr.name === getUsername());
+
+    if (idx && idx.length>0) {
+      return idx[0].isOwner;
+    }
+
+    return false;
   }
 
   componentDidMount() {
@@ -134,8 +144,10 @@ class DrawingGame extends React.Component<
       );
 
       newImageSubmittedSubject.subscribe((img) => {
+        console.log(img)
+
         const submissionData = {
-          data: img,
+          data: img.split("base64,")[1],
           room: this.getGameId(),
           name: getUsername(),
         };
@@ -166,6 +178,15 @@ class DrawingGame extends React.Component<
       );
 
       this.props.history.push("/game");
+    }
+  }
+
+  forceEnd() {
+    if(this.connection) {
+      this.connection.emit(
+        "is_round_over",
+        JSON.stringify({ room: this.getGameId() })
+      )
     }
   }
 
@@ -214,8 +235,21 @@ class DrawingGame extends React.Component<
               )}
               {this.state.gameState?.gameState === "playing" && (
                 <div className="aesthetic-windows-95-button">
-                  <button onClick={() => newImageSubmissionSubject.next()}>
+                  <button onClick={() =>{ 
+                    if (this.state.gameState?.gameState === "playing") {
+                      newImageSubmissionSubject.next() 
+                    } else {
+                      setTimeout(() => eraseCanvasSubject.next(), 100)
+                    }
+                  }}>
                     SUBMIT
+                  </button>
+                </div>
+              )}
+              {this.state.gameState?.gameState === "playing" && this.isOwner() && (
+                <div className="aesthetic-windows-95-button">
+                  <button onClick={() => this.forceEnd()}>
+                    END
                   </button>
                 </div>
               )}

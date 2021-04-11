@@ -43,14 +43,20 @@ export class LoginScreen extends React.Component<
               value={this.state.login}
               onChange={(e) => this.setState({ login: e.target.value })}
             />
-            <div style={{marginTop: "6px" }} className="aesthetic-windows-95-button">
-              <button 
-                disabled={this.state.login.length===0}
+            <div
+              style={{ marginTop: "6px" }}
+              className="aesthetic-windows-95-button"
+            >
+              <button
+                disabled={this.state.login.length === 0}
                 onClick={() => {
                   if (this.state.login.length > 0) {
                     newUserSubject.next({ username: this.state.login });
-                    errorSubject.next({ good: true, userMessage: `Welcome, ${this.state.login}` })
-                    this.props.history.push('/game')
+                    errorSubject.next({
+                      good: true,
+                      userMessage: `Welcome, ${this.state.login}`,
+                    });
+                    this.props.history.push("/game");
                   }
                 }}
               >

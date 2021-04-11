@@ -174,6 +174,8 @@ def bababooi_init_round(game):
     state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
     state['startDelayInSecs'] = START_DELAY_IN_SECS
     state['roundLengthInSecs'] = ROUND_LEN_IN_SECS
+    # midround | reviewing | anticipating
+    state['state'] = 'playing'
     state['newRound'] = True
 
     game.gameSpecificData = state
@@ -190,7 +192,7 @@ def bababooi_end_round(game):
     images = []
     for player in game.players:
         im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
-        im.resize((256, 256), resample=PIL.Image.NEAREST)
+        im.resize((256, 256), resample=Image.NEAREST)
         image_bytes = io.BytesIO()
         image.save(image_bytes, 'png')
         images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
@@ -206,15 +208,20 @@ def bababooi_end_round2(game):
         im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
         im = im.resize((256, 256), resample=PIL.Image.NEAREST)
         im = im.convert(mode="L")
+        im.resize((256, 256), resample=Image.NEAREST)
         image_bytes = io.BytesIO()
-        image.save(image_bytes, 'png')
+        im.save(image_bytes, 'png')
         images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
 
-    response = request.post('http://localhost:5000/quickdraw', json=images)
-    img_probs = response.json()
-    for i in range(len(game.players)):
-        score = probs[i][game.gameSpecificData['targetClassIdx']]
-        game.players[i].totalScore = int(100.0 * score)
+    response = requests.post('http://localhost:5000/quickdraw', json=images)
+    try:
+        img_probs = response.json()
+        if img_probs:
+            for i in range(len(game.players)):
+                score = img_probs[i][game.gameSpecificData['targetClassIdx']]
+                game.players[i].totalScore = int(100.0 * score)
+    except:
+        pass # ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss
     
 def start_game(json):
     room = json['room']
@@ -321,7 +328,7 @@ def is_round_over(room):
     game = games[room]
     roundOver = True
     for player in game.players:
-        if img not in player.gameSpecificData.keys():
+        if "img" not in player.gameSpecificData.keys():
             roundOver = False
     return roundOver
 

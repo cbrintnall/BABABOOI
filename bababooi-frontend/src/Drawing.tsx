@@ -95,6 +95,7 @@ class Drawer extends React.Component<DrawerProps, DrawerState> {
     newImageSubmissionSubject.subscribe(() => {
       if (this.canvasRef.current) {
         newImageSubmittedSubject.next(this.canvasRef.current.toDataURL());
+        this.resetCanvasState();
       }
     })
   }
