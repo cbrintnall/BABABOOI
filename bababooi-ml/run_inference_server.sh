@@ -1,1 +1,1 @@
-FLASK_ENV=development FLASK_APP=serve.py flask run
+FLASK_ENV=development FLASK_APP=serve.py MODEL=onnx/model.onnx flask run
