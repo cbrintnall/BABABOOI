@@ -1,3 +1,5 @@
+#Defining IAM role for the Lambda function
+
 resource "aws_iam_role" "JoinSessionRole" {
   name = "JoinSessionLambdaRole"
 

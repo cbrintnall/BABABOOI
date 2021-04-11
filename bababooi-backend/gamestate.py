@@ -198,6 +198,25 @@ def bababooi_end_round(game):
     json = request.post('endpt', json=images)
     print(json.content)
 
+def bababooi_end_round2(game):
+    game.gameState = 'lobby'
+    # TODO: Collect images, fire off ML thingy
+    images = []
+    for i in range(len(game.players)):
+        player = game.players[i]
+        im = Image.open(io.BytesIO(base64.b64decode(player.gameSpecificData['img'])))
+        im.resize((256, 256), resample=PIL.Image.NEAREST)
+        image_bytes = io.BytesIO()
+        image.save(image_bytes, 'png')
+        images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
+
+    response = request.post('http://localhost:5000/quickdraw', json=images)
+    img_probs = response.json()
+    for i in range(len(game.players)):
+        score = probs[i][game.gameSpecificData['targetClassIdx']]
+        game.players[i].totalScore = int(100.0 * score)
+    
+    # Calculate scores
 
 def start_game(json):
     room = json['room']
@@ -246,27 +265,10 @@ def submit_image(json):
         return "Can't submit an image after round is over"
     player = game.get_player(name)
 
-    # When timer is expired, front-end will call submit_image
-    # owner client make a ping to see if all images are done
-    # If so, go into review and ping everyone
-    # Otherwise, waits a bit before calling again
-
-    # Determine if player is final player
-    lastPlayer = True
-    for p in game.players:
-        if 'img' not in p.gameSpecificData.keys():
-            lastPlayer = False
-            break
-
-    if hasRoundExpired(game.gameSpecificData['startingTime'], ROUND_LEN_IN_SECS + START_DELAY_IN_SECS):
-        lastPlayer = True
-
     if 'img' in player.gameSpecificData.keys():
         return "Can't submit an image twice in a round!"
 
     player.gameSpecificData['img'] = img
-    if lastPlayer:
-        bababooi_end_round(game)
     return ''
 
 def hasRoundExpired(startTimeStr, durationInSecs):
