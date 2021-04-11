@@ -20,8 +20,9 @@ def main(args):
     else:
         raise ValueError(f'Model type {args.type} not supported.')
 
-    sample = torch.rand(1, 1, 256, 256)
-    model.to_onnx(args.out, sample, export_params=True)
+    x = torch.rand(1, 1, 256, 256, requires_grad=True)
+    model.to_onnx(args.out, x, export_params=True, input_names=['input'], output_names=['output'],
+                  dynamic_axes={'input': {0: 'batch_size'}, 'output': {0: 'batch_size'}})
 
 
 if __name__ == '__main__':
