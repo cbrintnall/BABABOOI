@@ -177,7 +177,6 @@ def bababooi_init_round(game):
 
     game.gameSpecificData = state
 
-
 def bababooi_start_next_round(game):
     game = games[room]
     if game.gameSpecificData['state'] == 'playing':

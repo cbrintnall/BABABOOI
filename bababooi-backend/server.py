@@ -107,7 +107,7 @@ def start_game(data):
     room = packet['room']
     game = gamestate.games[room]
     if game.gameType == 'bababooi':
-        game.gameState['newRound'] = False
+        game.gameSpecificData['newRound'] = False
 
 @socketio.on('is_round_over')
 def is_round_over(data):
