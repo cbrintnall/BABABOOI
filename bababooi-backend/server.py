@@ -18,14 +18,15 @@ def status():
 
 @app.route('/create', methods=['POST'])
 def create():
-    if 'username' not in request.json or 'sessionId' not in request.json:
+    print(request.args)
+    if 'username' not in request.args or 'sessionId' not in request.args:
         return app.response_class(response="Missing param", status=400)
-    user = request.json['username']
-    room = request.json['sessionId']
+    user = request.args['username']
+    room = request.args['sessionId']
     
     print()
 
-    if 'create' not in request.json:
+    if 'create' not in request.args:
         err = gamestate.create_player_in_room(room, user)
     else:
         err = gamestate.create_room_with_player(room, user)
@@ -42,6 +43,7 @@ def broadcast_gamestate(room):
 
 @socketio.on('handshake')
 def handshake(data):
+    println("handshake")
     packet = json.loads(data)
     join_room(packet['room'])
     broadcast_gamestate(packet['room'])
