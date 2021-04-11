@@ -76,12 +76,23 @@ def submit_image(data):
 def submit_text(data):
     pass
 
-def download_images():
+def preload():
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('bababooi')
-    # obj = bucket.Object('asdfasdfadsf')
-    # fs = io.StringIO()
-    # obj.download_fileobj(fs)
+
+    # Load bababooi data
+    info = bucket.Object('games/adv_draw/info.json')
+    gamestate.bababooi_data['info'] = json.loads(info.get()['Body'].read())
+    gamestate.bababooi_data['img'] = {}
+    for class_name in gamestate.bababooi_data['info']['class_names']:
+        filename = 'games/adv_draw/' + class_name + '.ndjson'
+        imgs = bucket.Object(filename)
+        gamestate.bababooi_data['img'][class_name] = []
+        imgFileStr = imgs.get()['Body'].read()
+        for line in imgFileStr.splitlines():
+            gamestate.bababooi_data['img'][class_name].append(json.loads(line))
+    print(gamestate.bababooi_data['info'])
+
     # images = [Image.new('L', (256, 256)) for _ in range(4)]
     # for i, image in enumerate(images):
     #     image_bytes = io.BytesIO()
@@ -92,5 +103,5 @@ def download_images():
     # print(json.content)
 
 if __name__ == '__main__':
-    download_images()
+    preload()
     socketio.run(app)
