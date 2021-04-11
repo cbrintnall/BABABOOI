@@ -53,7 +53,7 @@ def remove_player(json):
     room = json['room']
     name = json['name']
     if room not in games.keys():
-        return False
+        return
     game = games[room]
     isOwner = False
     for i in range(0, len(game.players)):
@@ -65,8 +65,6 @@ def remove_player(json):
         game.players[0].isOwner = True
     elif len(game.players) == 0:
         games.pop(room)
-        return False
-    return True
 
 def choose_game(json):
     room = json['room']

@@ -31,10 +31,13 @@ def create():
         else:
             err = gamestate.create_room_with_player(room, user)
         code = 200 if err == '' else 404
+        broadcast_gamestate(room)
         return app.response_class(err, code)
 
 def broadcast_gamestate(room):
     st = gamestate.get_gamestate(room)
+    if st == None:
+        return
     msg = json.dumps(st)
     emit('gamestate', msg, to=room)
 
@@ -51,10 +54,10 @@ def broadcast_gamestate(room):
 @socketio.on('leave_game')
 def leave_game(data):
     packet = json.loads(data)
-    game_still_exists = gamestate.remove_player(packet)
+    gamestate.remove_player(packet)
     leave_room(packet['room'])
-    if game_still_exists:
-        broadcast_gamestate(packet['room'])
+    broadcast_gamestate(packet['room'])
+
 
 @socketio.on('choose_game')
 def choose_game(data):
