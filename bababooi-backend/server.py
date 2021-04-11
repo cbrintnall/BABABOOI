@@ -24,8 +24,6 @@ def create():
     user = request.args['username']
     room = request.args['sessionId']
     
-    print()
-
     if 'create' not in request.args:
         err = gamestate.create_player_in_room(room, user)
     else:
@@ -43,7 +41,6 @@ def broadcast_gamestate(room):
 
 @socketio.on('handshake')
 def handshake(data):
-    println("handshake")
     packet = json.loads(data)
     join_room(packet['room'])
     broadcast_gamestate(packet['room'])
@@ -79,7 +76,12 @@ def submit_image(data):
 
 @socketio.on('submit_text')
 def submit_text(data):
-    pass
+    packet = json.loads(data)
+    err = gamestate.submit_image(json)
+    if err != '':
+        emit('error', err)
+        return
+    broadcast_gamestate(packet['room'])
 
 def preload():
     s3 = boto3.resource('s3')

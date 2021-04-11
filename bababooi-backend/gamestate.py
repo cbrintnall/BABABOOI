@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 import random
+from datetime import datetime, timezone
 
 MAX_GAMES = 10
 
@@ -78,7 +79,7 @@ def choose_game(json):
     name = json['name']
     game = json['game']
     if room not in games.keys():
-        return "Room doesn't exist!";
+        return "Room doesn't exist!"
     player = games[room].get_player(name)
     if player == None:
         return "Player doesn't exist in room!"
@@ -92,8 +93,8 @@ def choose_game(json):
 
 def init_game(room):
     if room not in games.keys():
-        return "Room doesn't exist!";
-    game = games['room']
+        return "Room doesn't exist!"
+    game = games[room]
     mode = game.gameType
     game.gameSpecificData = {}
     if mode == 'bababooi':
@@ -111,7 +112,7 @@ def bababooi_init_round(game):
     state['startingClassName'] = bababooi_data['info']['proper_names'][classes[0]]
     state['targetClassName'] = bababooi_data['info']['proper_names'][classes[1]]
     state['startingImg'] = bababooi_data['img'][startClassName][img_idx]['drawing']
-    state['startingTime'] = ''
+    state['startingTime'] = str(datetime.now(timezone.utc).isoformat())
 
 def bababooi_score_round(game):
     pass
@@ -120,7 +121,7 @@ def start_game(json):
     room = json['room']
     name = json['name']
     if room not in games.keys():
-        return "Room doesn't exist!";
+        return "Room doesn't exist!"
     player = games[room].get_player(name)
     if player == None:
         return "Player doesn't exist in room!"
@@ -146,6 +147,12 @@ def get_gamestate(room):
     res['gameSpecificData'] = game.gameSpecificData
     res['players'] = game.get_player_array()
     return res
+
+def submit_image(json):
+    room = json['room']
+    name = json['name']
+    img = json['data'] # TODO: decode img
+    game = games[room]
 
 def get_server_status():
     result = {}
