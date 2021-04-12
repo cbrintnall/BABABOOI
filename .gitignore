@@ -11,3 +11,6 @@ bababooi-ml/splits/
 *.terraform*
 bababooi-infra/terraform/builds*
 bababooi-infra/ddb-testing*
+
+.virtualenvs/
+Pipfile.lock
