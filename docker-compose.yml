@@ -1,0 +1,13 @@
+version: "3.9"
+services:
+  frontend:
+    build: ./bababooi-frontend
+    entrypoint: 
+      - npm
+      - start
+    environment:
+      - NODE_ENV=development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./bababooi-frontend:/app
