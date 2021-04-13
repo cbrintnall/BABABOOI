@@ -1,5 +1,23 @@
 version: "3.9"
 services:
+  management:
+    build: bababooi-infra/joingame-lambda
+    command:
+      - JoinGame.lambda_handler
+    ports:
+      - "9000:9000"
+  game_server:
+    build: ./bababooi-backend
+    entrypoint:
+      - pipenv
+      - run
+      - docker_dev
+    ports:
+      - "5000:5000"
+    environment:
+      - ENV=development
+    volumes:
+      - ./bababooi-backend:/app
   frontend:
     build: ./bababooi-frontend
     entrypoint: 
