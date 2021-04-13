@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 Flask = "==1.1.2"
 Flask-SocketIO = "==5.0.1"
+gunicorn = "==20.1.0"
+gevent-websocket= "==0.10.1"
 pillow = "*"
 boto3 = "*"
 flask-cors = "*"
@@ -14,4 +16,9 @@ requests = "*"
 [dev-packages]
 
 [requires]
-python_version = "3.9"
+python_version = "3.8"
+
+[scripts]
+dev = "python src/server.py"
+docker_dev = "gunicorn server:app --chdir src --reload --capture-output --log-level debug -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker"
+docker_prod = "gunicorn server:app -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker"
