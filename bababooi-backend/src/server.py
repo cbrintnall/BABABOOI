@@ -1,20 +1,22 @@
 from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, emit, join_room, leave_room
 from flask_cors import CORS
-from model_interactions import preload
-import json, io, random, string
+from model_interactions import preload, load_data_local
+import json, io, random, string, os
 from PIL import Image
 import gamestate
 
 app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = 'secret!'
+app.config.from_object(f'settings.{os.environ.get("CONFIG", "DevConfig")}')
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 try:
     preload()
 except Exception as e:
-    print(f"Exception preloading: {e}, this won't stop app start")
+    print(f"Exception preloading: {e}, this won't stop app start, we'll try a local load instead")
+    load_data_local()
 
 @app.route('/status', methods=['GET'])
 def status():

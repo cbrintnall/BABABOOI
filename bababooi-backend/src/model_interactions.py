@@ -1,4 +1,24 @@
 import os, boto3, json
+import gamestate
+
+def load_data_local():
+    data_path = os.environ.get("DATA_PATH")
+    info_file = os.environ.get("INFO_FILENAME", "info.json")
+
+    with open(f"{data_path}/{info_file}", "r") as f:
+        gamestate.bababooi_data["info"] = json.loads(f.read())
+        gamestate.bababooi_data["img"] = {}
+
+        for class_name in gamestate.bababooi_data['info']['class_names']:
+            filename = f"{data_path}/{class_name}.ndjson"
+            gamestate.bababooi_data["img"][class_name] = []
+            with open(filename, "r") as drawings:
+                drawings_data = drawings.read()
+                for line in drawings_data.split("\n"):
+                    if line:
+                        gamestate.bababooi_data["img"][class_name].append(json.loads(line))
+    
+    print("finished local load")
 
 def preload():
     s3 = boto3.resource('s3')

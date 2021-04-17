@@ -1,5 +1,5 @@
+import { RequestOptions } from "https";
 import cfg from "./config";
-import {getUsername} from './App';
 
 interface GameJoinResponse {
   statusCode: number;
@@ -11,13 +11,19 @@ export const requestGame = (
   username: string,
   gameId?: string
 ): Promise<string | GameJoinResponse> => {
-  const url = [
-    cfg.lobbyDomain,
-    `?userId=${username}`,
-    gameId ? `&gameId=${gameId}` : "",
-  ].join("");
+  const data = {
+    userId: username,
+    gameId
+  }
 
-  return fetch(url, { redirect: "follow" })
+  const options: RequestInit = { 
+    redirect: "follow", 
+    method: "POST", 
+    body: JSON.stringify(data), 
+    mode: cfg.requestCorsMode 
+  }
+
+  return fetch(cfg.lobbyDomain, options)
     .then((res) => {
       switch (res.status) {
         case 200:
@@ -34,6 +40,7 @@ export const requestGame = (
       return data;
     })
     .catch((err) => {
+      console.error(err)
       return "There was an error finding the server";
     }) as Promise<string | GameJoinResponse>;
 };

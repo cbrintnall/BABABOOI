@@ -13,3 +13,4 @@ RUN pip install pipenv && \
     pipenv install
 
 COPY src src
+COPY data data

@@ -1,8 +1,8 @@
 import * as process from "process";
 
 interface Config {
-  backendDomain: string;
   lobbyDomain: string;
+  requestCorsMode: RequestMode
 }
 
 interface CommonConfig {
@@ -32,14 +32,13 @@ const common: CommonConfig = {
 };
 
 const dev: Config = {
-  backendDomain: "http://127.0.0.1:5000",
-  lobbyDomain:
-    "https://ayx8sw3us2.execute-api.us-west-2.amazonaws.com/test/game",
+  lobbyDomain: "http://localhost:8080",
+  requestCorsMode: 'cors'
 };
 
 const prod: Config = {
-  backendDomain: "",
   lobbyDomain: "https://api.bababooi.club",
+  requestCorsMode: 'cors'
 };
 
 export default {

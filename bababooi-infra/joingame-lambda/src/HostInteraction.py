@@ -7,7 +7,7 @@ def query_hosts(hostList):
     selected_host = ''
 
     for hostname in hostList:
-        r = requests.get(f'http://{hostname}:5000/status')
+        r = requests.get(f'{hostname}/status')
         if r.status_code != 200:
             logger.warning(f'host {hostname} returned non-200 response {r.status_code}')
             continue
@@ -33,7 +33,7 @@ def cleanup_old_sessions(hostList):
         database_sessions = [x['GameSessionId'] for x in database_records['Items']]
         logger.info(database_sessions)
 
-        r = requests.get(f'http://{hostname}:5000/status')
+        r = requests.get(f'{hostname}/status')
         active_sessions = [x['sessionId'] for x in r.json()['rooms']]
         print(active_sessions)
 
@@ -49,7 +49,6 @@ def find_host(userId):
     scan_kwargs = {
         'ProjectionExpression':'hostname'
     }
-
     response = Core.host_table.scan(**scan_kwargs)
     print(response['Items'])
     hostnames = [x['hostname'] for x in response['Items']]
@@ -58,11 +57,11 @@ def find_host(userId):
     logger.debug(hostnames)
 
     cleanup_old_sessions(hostnames)
-    return(query_hosts(hostnames))
+    return query_hosts(hostnames)
 
 def join_session(hostname, userId, gameId, create):
 
-    post_string = f'http://{hostname}:5000/create?username={userId}&sessionId={gameId}'
+    post_string = f'{hostname}/create?username={userId}&sessionId={gameId}'
     if create:
         post_string += '&create=true'
 

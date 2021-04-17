@@ -1,6 +1,7 @@
 import re, string, random
 import boto3
 import Core
+import os
 from Core import logger, ddb
 
 from HostInteraction import query_hosts, find_host, join_session
@@ -8,13 +9,12 @@ from HostInteraction import query_hosts, find_host, join_session
 def register_new_game(gameId, session_hostname):
     Core.session_table.put_item(
         Item={
-            'GameSessionId':gameId,
-            'hostname': session_hostname
+            'GameSessionId': str(gameId),
+            'hostname': str(session_hostname)
         }
     )
 
-
-def lambda_handler(event, context):
+def handle_event(event, context):
     print(event)
     userId = event['userId']
 
@@ -84,7 +84,7 @@ def lambda_handler(event, context):
 
         return {
             'statusCode': 200,
-            'host':session_hostname+':5000',
+            'host': os.environ.get("GAME_SERVER_OVERRIDE", session_hostname),
             'gameId':gameId
         }
     elif resp_code == 404:
@@ -93,6 +93,16 @@ def lambda_handler(event, context):
             'error': 'GameIdNotFound'
         }
     else:
+        return {
+            'statusCode': 500,
+            'error': 'UnknownError'
+        }
+
+def lambda_handler(event, context):
+    try:
+        return handle_event(event, context)
+    except Exception as e:
+        logger.error(e)
         return {
             'statusCode': 500,
             'error': 'UnknownError'

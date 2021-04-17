@@ -1,0 +1,22 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+Flask = "==1.1.2"
+gunicorn = "==20.1.0"
+gevent-websocket= "==0.10.1"
+pillow = "*"
+flask-cors = "*"
+onnxruntime = "==1.7.0"
+
+[dev-packages]
+
+[requires]
+python_version = "3.8"
+
+[scripts]
+dev = "python serve.py"
+docker_dev = "gunicorn serve:app --reload --capture-output --log-level debug -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -b :6000"
+docker_prod = "gunicorn serve:app -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker"

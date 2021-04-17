@@ -2,19 +2,22 @@ import base64
 import io
 import os
 from PIL import Image
-
+from flask_cors import CORS
 from flask import Flask, jsonify, request
 import numpy as np
 import onnxruntime
-from transformers import AutoTokenizer
+# TODO: add back when integrating FF
+# from transformers import AutoTokenizer
 
 
 app = Flask(__name__)
+CORS(app)
 qd_mdl = os.environ.get("QUICKDRAW_MDL")
 nf_mdl = os.environ.get("NLPFEUD_MDL")
 ort_session_qd = onnxruntime.InferenceSession(qd_mdl)
-ort_session_nf = onnxruntime.InferenceSession(nf_mdl)
-tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
+# TODO: add back when integrating FF
+# ort_session_nf = onnxruntime.InferenceSession(nf_mdl)
+# tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
 
 
 def softmax(arr, axis):

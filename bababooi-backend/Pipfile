@@ -20,5 +20,5 @@ python_version = "3.8"
 
 [scripts]
 dev = "python src/server.py"
-docker_dev = "gunicorn server:app --chdir src --reload --capture-output --log-level debug -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker"
+docker_dev = "gunicorn server:app --chdir src --reload --capture-output --log-level debug -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker -b :5000"
 docker_prod = "gunicorn server:app --chdir src -k geventwebsocket.gunicorn.workers.GeventWebSocketWorker"

@@ -4,6 +4,7 @@ import math
 import random, base64
 import requests
 
+from flask import current_app
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from PIL import Image
@@ -213,7 +214,8 @@ def bababooi_end_round2(game):
         im.save(image_bytes, 'png')
         images.append(base64.b64encode(image_bytes.getvalue()).decode('ascii'))
 
-    response = requests.post('http://localhost:5000/quickdraw', json=images)
+    model_url = current_app.config["MODEL_URL"]
+    response = requests.post(f'{model_url}/quickdraw', json=images)
     print(response.json())
     try:
         img_probs = response.json()
