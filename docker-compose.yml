@@ -1,0 +1,71 @@
+version: "3.9"
+services:
+  dynamo:
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "8000:8000"
+    command: "-jar DynamoDBLocal.jar -sharedDb -inMemory"
+  management_watcher:
+    build: ./bababooi-infra/dockerfiles/watcher
+    volumes:
+      - ./bababooi-infra/joingame-lambda/src:/root/home
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      VOLUMES: /root/home
+      CONTAINER: bababooi_management
+  management_proxy:
+    build: ./bababooi-infra/dockerfiles/lambda-proxy
+    ports:
+      - "8080:80"
+    depends_on:
+      - management
+  management:
+    build: bababooi-infra/joingame-lambda
+    restart: always
+    environment:
+      ENV: development
+      AWS_ACCESS_KEY_ID: 'DUMMYIDEXAMPLE' # these just have to be faked out
+      AWS_SECRET_ACCESS_KEY: 'DUMMYEXAMPLEKEY' # these just have to be faked out
+      DYNAMO_URL: http://dynamo:8000
+      GAME_SERVER_HOST: http://game_server:5000
+      GAME_SERVER_OVERRIDE: http://localhost:5000
+    volumes:
+      - ./bababooi-infra/joingame-lambda/src:/var/task
+    depends_on:
+      - dynamo
+  game_server:
+    build: ./bababooi-backend
+    entrypoint:
+      - pipenv
+      - run
+      - docker_dev
+    ports:
+      - "5000:5000"
+    environment:
+      ENV: development
+      DATA_PATH: /app/data
+    volumes:
+      - ./bababooi-backend:/app
+  frontend:
+    build: ./bababooi-frontend
+    entrypoint: 
+      - npm
+      - start
+    environment:
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./bababooi-frontend:/app
+  quickdraw:
+    build: ./bababooi-ml
+    entrypoint:
+      - pipenv
+      - run
+      - docker_dev
+    ports:
+      - "6000:6000"
+    environment:
+      ENV: development
+      QUICKDRAW_MDL: /app/quickdraw.onnx
+

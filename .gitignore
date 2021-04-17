@@ -7,7 +7,9 @@ bababooi-ml/lightning_logs/
 bababooi-ml/raw_data/
 bababooi-ml/splits/
 .vscode/
-*.onnx
 *.terraform*
 bababooi-infra/terraform/builds*
 bababooi-infra/ddb-testing*
+
+.virtualenvs/
+Pipfile.lock

@@ -14,6 +14,7 @@ import { NewGame } from "./pages/NewGame";
 import { LoginScreen } from "./pages/LoginScreen";
 import { errorSubject, ErrorEvent, newUserSubject } from "./events";
 import { DrawingGame } from "./pages/Drawing";
+import cfg from './config';
 
 type User = {
   username: string;

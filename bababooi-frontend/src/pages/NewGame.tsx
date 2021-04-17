@@ -41,6 +41,8 @@ class NewGame extends React.Component<RouteComponentProps, NewGameState> {
       this.hasValidJoinId() ? this.state.joinId : undefined
     )
       .then((result) => {
+        console.log(result)
+
         // if returned a string, it's an error
         if (typeof result === "string" || (result as any).errorMessage) {
           errorSubject.next({ userMessage: result as string });
